@@ -6,6 +6,9 @@ Circle maps your real social graph (1st circle + through your circle), lets you 
 
 > Prototype / open-source client. No production backend yet — demo data powers the orbit, discover, and intro flows so you can experience the product.
 
+**Live web:** [suryakhanna7.github.io/circle](https://suryakhanna7.github.io/circle/)  
+**Source:** [github.com/SuryaKhanna7/circle](https://github.com/SuryaKhanna7/circle)
+
 ## Product
 
 | Surface | What it does |
