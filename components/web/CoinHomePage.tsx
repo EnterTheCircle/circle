@@ -19,18 +19,19 @@ const AVATAR = require('../../assets/images/coin/avatar.jpg');
 type Phase = 'landing' | 'story' | 'auth' | 'discover';
 
 const NODES = [
-  { angle: 18, r: 0.28, size: 10 },
-  { angle: 62, r: 0.38, size: 14 },
-  { angle: 110, r: 0.32, size: 11 },
-  { angle: 155, r: 0.42, size: 16 },
-  { angle: 200, r: 0.3, size: 12 },
-  { angle: 245, r: 0.4, size: 15 },
-  { angle: 290, r: 0.34, size: 11 },
-  { angle: 335, r: 0.36, size: 13 },
-  { angle: 40, r: 0.52, size: 8 },
-  { angle: 95, r: 0.55, size: 9 },
-  { angle: 175, r: 0.5, size: 8 },
-  { angle: 260, r: 0.54, size: 10 },
+  { angle: 12, r: 0.34, size: 11 },
+  { angle: 48, r: 0.42, size: 14 },
+  { angle: 86, r: 0.36, size: 10 },
+  { angle: 128, r: 0.46, size: 15 },
+  { angle: 168, r: 0.33, size: 12 },
+  { angle: 210, r: 0.44, size: 13 },
+  { angle: 252, r: 0.37, size: 11 },
+  { angle: 294, r: 0.45, size: 14 },
+  { angle: 336, r: 0.35, size: 10 },
+  { angle: 70, r: 0.58, size: 8 },
+  { angle: 160, r: 0.56, size: 9 },
+  { angle: 250, r: 0.57, size: 8 },
+  { angle: 320, r: 0.55, size: 9 },
 ];
 
 const STORY_STEPS = [
@@ -51,6 +52,8 @@ const STORY_STEPS = [
   },
 ];
 
+const CHIPS = ['lawyer', 'designer', 'founder', 'engineer', 'stylist', 'chef'];
+
 type Phantom = {
   id: string;
   name: string;
@@ -59,98 +62,23 @@ type Phantom = {
   degree: 1 | 2;
   tags: string[];
   ghost?: boolean;
+  color: string;
 };
 
 const PHANTOMS: Phantom[] = [
-  {
-    id: '1',
-    name: 'Misha V.',
-    role: 'Product Designer',
-    via: 'Your connections',
-    degree: 1,
-    tags: ['design', 'figma', 'brand'],
-  },
-  {
-    id: '2',
-    name: 'James C.',
-    role: 'Venture Capital',
-    via: 'Your connections',
-    degree: 1,
-    tags: ['startups', 'markets', 'founder'],
-  },
-  {
-    id: '3',
-    name: 'Confidential',
-    role: 'Details hidden',
-    via: 'Through Misha',
-    degree: 2,
-    tags: ['lawyer', 'counsel', 'legal'],
-    ghost: true,
-  },
-  {
-    id: '4',
-    name: 'Priya S.',
-    role: 'Data Scientist',
-    via: 'Through James',
-    degree: 2,
-    tags: ['ai', 'ml', 'engineer'],
-  },
-  {
-    id: '5',
-    name: 'Alex R.',
-    role: 'Software Engineer',
-    via: 'Your connections',
-    degree: 1,
-    tags: ['engineer', 'ai', 'builder'],
-  },
-  {
-    id: '6',
-    name: 'Confidential',
-    role: 'Details hidden',
-    via: 'Through Alex',
-    degree: 2,
-    tags: ['stylist', 'beauty', 'hair'],
-    ghost: true,
-  },
-  {
-    id: '7',
-    name: 'Sarah K.',
-    role: 'Brand Strategist',
-    via: 'Your connections',
-    degree: 1,
-    tags: ['brand', 'marketing', 'creator'],
-  },
-  {
-    id: '8',
-    name: 'Olivia M.',
-    role: 'Real Estate',
-    via: 'Through Sarah',
-    degree: 2,
-    tags: ['real estate', 'apartment', 'broker'],
-  },
-  {
-    id: '9',
-    name: 'Chris N.',
-    role: 'Chef',
-    via: 'Through Misha',
-    degree: 2,
-    tags: ['chef', 'food', 'restaurant'],
-  },
-  {
-    id: '10',
-    name: 'Confidential',
-    role: 'Details hidden',
-    via: 'Through James',
-    degree: 2,
-    tags: ['founder', 'ceo', 'operator'],
-    ghost: true,
-  },
+  { id: '1', name: 'Misha V.', role: 'Product Designer', via: 'Your connections', degree: 1, tags: ['design', 'figma', 'brand', 'designer'], color: '#22D3EE' },
+  { id: '2', name: 'James C.', role: 'Venture Capital', via: 'Your connections', degree: 1, tags: ['startups', 'markets', 'founder'], color: '#67E8F9' },
+  { id: '3', name: 'Confidential', role: 'Details hidden', via: 'Through Misha', degree: 2, tags: ['lawyer', 'counsel', 'legal'], ghost: true, color: '#64748B' },
+  { id: '4', name: 'Priya S.', role: 'Data Scientist', via: 'Through James', degree: 2, tags: ['ai', 'ml', 'engineer'], color: '#38BDF8' },
+  { id: '5', name: 'Alex R.', role: 'Software Engineer', via: 'Your connections', degree: 1, tags: ['engineer', 'ai', 'builder'], color: '#2DD4BF' },
+  { id: '6', name: 'Confidential', role: 'Details hidden', via: 'Through Alex', degree: 2, tags: ['stylist', 'beauty', 'hair'], ghost: true, color: '#64748B' },
+  { id: '7', name: 'Sarah K.', role: 'Brand Strategist', via: 'Your connections', degree: 1, tags: ['brand', 'marketing', 'creator', 'designer'], color: '#A5F3FC' },
+  { id: '8', name: 'Olivia M.', role: 'Real Estate', via: 'Through Sarah', degree: 2, tags: ['real estate', 'apartment', 'broker'], color: '#5EEAD4' },
+  { id: '9', name: 'Chris N.', role: 'Chef', via: 'Through Misha', degree: 2, tags: ['chef', 'food', 'restaurant'], color: '#67E8F9' },
+  { id: '10', name: 'Confidential', role: 'Details hidden', via: 'Through James', degree: 2, tags: ['founder', 'ceo', 'operator'], ghost: true, color: '#64748B' },
 ];
 
-/**
- * Web marketing funnel only — does not open the native app orbit.
- * landing → story → dummy auth → phantom discover
- */
+/** Web marketing funnel — landing → story → demo auth → phantom search */
 export default function CoinHomePage() {
   const { width, height } = useWindowDimensions();
   const [phase, setPhase] = useState<Phase>('landing');
@@ -159,6 +87,8 @@ export default function CoinHomePage() {
   const [password, setPassword] = useState('');
   const [query, setQuery] = useState('');
   const [submitted, setSubmitted] = useState('');
+  const [selected, setSelected] = useState<Phantom | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
   const entering = useRef(false);
 
   const spin = useRef(new Animated.Value(0)).current;
@@ -166,16 +96,16 @@ export default function CoinHomePage() {
   const expand = useRef(new Animated.Value(0)).current;
   const fadeUi = useRef(new Animated.Value(1)).current;
   const flash = useRef(new Animated.Value(0)).current;
-  const nodePop = useRef(new Animated.Value(0)).current;
   const storyFade = useRef(new Animated.Value(1)).current;
 
-  const stage = Math.min(width, height) * 0.92;
+  // Orbit sits behind UI — sized so it doesn't fight the copy
+  const stage = Math.min(width * 0.78, height * 0.72, 720);
 
   useEffect(() => {
     const spinLoop = Animated.loop(
       Animated.timing(spin, {
         toValue: 1,
-        duration: 42000,
+        duration: 52000,
         easing: Easing.linear,
         useNativeDriver: true,
       })
@@ -184,13 +114,13 @@ export default function CoinHomePage() {
       Animated.sequence([
         Animated.timing(pulse, {
           toValue: 1,
-          duration: 2000,
+          duration: 2400,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
         Animated.timing(pulse, {
           toValue: 0,
-          duration: 2000,
+          duration: 2400,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
@@ -209,15 +139,21 @@ export default function CoinHomePage() {
     storyFade.setValue(0);
     Animated.timing(storyFade, {
       toValue: 1,
-      duration: 420,
+      duration: 380,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
     }).start();
   }, [storyIndex, phase, storyFade]);
 
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 2200);
+    return () => clearTimeout(t);
+  }, [toast]);
+
   const results = useMemo(() => {
     const q = submitted.trim().toLowerCase();
-    if (!q) return PHANTOMS.slice(0, 6);
+    if (!q) return PHANTOMS;
     return PHANTOMS.filter(
       (p) =>
         p.name.toLowerCase().includes(q) ||
@@ -227,6 +163,11 @@ export default function CoinHomePage() {
     );
   }, [submitted]);
 
+  useEffect(() => {
+    if (results.length === 0) setSelected(null);
+    else if (!selected || !results.some((r) => r.id === selected.id)) setSelected(results[0]);
+  }, [results, selected]);
+
   const startEnter = () => {
     if (entering.current || phase !== 'landing') return;
     entering.current = true;
@@ -234,34 +175,19 @@ export default function CoinHomePage() {
     Animated.parallel([
       Animated.timing(fadeUi, {
         toValue: 0,
-        duration: 380,
+        duration: 360,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
       Animated.timing(expand, {
         toValue: 1,
-        duration: 1400,
+        duration: 1100,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
-      Animated.timing(nodePop, {
-        toValue: 1,
-        duration: 800,
-        delay: 160,
-        easing: Easing.out(Easing.back(1.5)),
-        useNativeDriver: true,
-      }),
       Animated.sequence([
-        Animated.timing(flash, {
-          toValue: 1,
-          duration: 260,
-          useNativeDriver: true,
-        }),
-        Animated.timing(flash, {
-          toValue: 0,
-          duration: 700,
-          useNativeDriver: true,
-        }),
+        Animated.timing(flash, { toValue: 0.85, duration: 220, useNativeDriver: true }),
+        Animated.timing(flash, { toValue: 0, duration: 650, useNativeDriver: true }),
       ]),
     ]).start(() => {
       setPhase('story');
@@ -279,41 +205,29 @@ export default function CoinHomePage() {
     setPhase('discover');
   };
 
-  const rotate = spin.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
-  const ringScale = Animated.multiply(
-    pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.045] }),
-    expand.interpolate({ inputRange: [0, 1], outputRange: [1, 2.35] })
-  );
-  const ringOpacity = expand.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [0.55, 0.9, 0],
-  });
-  const coreScale = Animated.add(
-    pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.08] }),
-    expand.interpolate({ inputRange: [0, 1], outputRange: [0, 0.5] })
-  );
+  const runSearch = (q: string) => {
+    setQuery(q);
+    setSubmitted(q);
+  };
 
   if (phase === 'story') {
     const step = STORY_STEPS[storyIndex];
     return (
       <View style={styles.page}>
-        <OrbitBackdrop
-          stage={stage * 0.7}
+        <Orbit
+          stage={stage * 0.85}
           spin={spin}
           pulse={pulse}
           expand={expand}
-          nodePop={nodePop}
           muted
+          showCore
         />
         <Animated.View style={[styles.storyWrap, { opacity: storyFade }]}>
           <Text style={styles.storyKicker}>
-            How it works · {storyIndex + 1}/{STORY_STEPS.length}
+            How it works · {storyIndex + 1} / {STORY_STEPS.length}
           </Text>
           <View style={styles.storyIcon}>
-            <Ionicons name={step.icon} size={32} color="#22D3EE" />
+            <Ionicons name={step.icon} size={30} color="#22D3EE" />
           </View>
           <Text style={styles.storyTitle}>{step.title}</Text>
           <Text style={styles.storyBody}>{step.body}</Text>
@@ -343,7 +257,7 @@ export default function CoinHomePage() {
           <Image source={AVATAR} style={styles.authMark} />
           <Text style={styles.authBrand}>CIRCLE</Text>
           <Text style={styles.authTitle}>Enter the circle</Text>
-          <Text style={styles.authSub}>Demo access — any username & password works.</Text>
+          <Text style={styles.authSub}>Demo access — any username and password works.</Text>
           <TextInput
             value={username}
             onChangeText={setUsername}
@@ -379,103 +293,225 @@ export default function CoinHomePage() {
   }
 
   if (phase === 'discover') {
+    const wide = width >= 960;
     return (
       <View style={styles.discoverPage}>
-        <View style={styles.discoverTop}>
-          <View style={styles.navBrand}>
-            <Image source={AVATAR} style={styles.navMark} />
-            <Text style={styles.navWord}>CIRCLE</Text>
-          </View>
-          <Text style={styles.hello}>Hi {username.trim() || 'there'}</Text>
-        </View>
-
-        <Text style={styles.discoverTitle}>Find people</Text>
-        <Text style={styles.discoverSub}>
-          Search your circle — roles, skills, or names. Some 2nds stay Confidential.
-        </Text>
-
-        <View style={styles.searchRow}>
-          <Ionicons name="search" size={18} color="#64748B" />
-          <TextInput
-            value={query}
-            onChangeText={(t) => {
-              setQuery(t);
-              setSubmitted(t);
-            }}
-            placeholder="Try lawyer, designer, founder…"
-            placeholderTextColor="#64748B"
-            style={styles.searchInput}
-            autoFocus
-          />
-          {query ? (
-            <Pressable
-              onPress={() => {
-                setQuery('');
-                setSubmitted('');
-              }}
-            >
-              <Ionicons name="close-circle" size={18} color="#64748B" />
-            </Pressable>
-          ) : null}
-        </View>
-
-        <ScrollView contentContainerStyle={styles.resultList} showsVerticalScrollIndicator={false}>
-          {results.map((p) => (
-            <View
-              key={p.id}
-              style={[styles.personCard, p.degree === 1 ? styles.personDirect : styles.personThrough]}
-            >
-              <View style={[styles.avatar, p.ghost && styles.avatarGhost]}>
-                <Text style={styles.avatarTxt}>{p.ghost ? '?' : p.name[0]}</Text>
-              </View>
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={[styles.personName, p.ghost && styles.personGhost]} numberOfLines={1}>
-                  {p.name}
-                </Text>
-                <Text style={styles.personRole} numberOfLines={1}>
-                  {p.role}
-                </Text>
-                <Text style={styles.personVia} numberOfLines={1}>
-                  {p.via}
-                </Text>
-              </View>
-              <Pressable style={styles.askBtn}>
-                <Text style={styles.askTxt}>{p.degree === 1 ? 'Message' : 'Ask intro'}</Text>
-              </Pressable>
+        <View style={styles.discoverInner}>
+          <View style={styles.discoverTop}>
+            <View style={styles.navBrand}>
+              <Image source={AVATAR} style={styles.navMark} />
+              <Text style={styles.navWord}>CIRCLE</Text>
             </View>
-          ))}
-          {results.length === 0 ? (
-            <Text style={styles.empty}>No matches in this demo circle. Try “lawyer” or “design”.</Text>
-          ) : null}
-        </ScrollView>
+            <View style={styles.helloPill}>
+              <Text style={styles.hello}>Hi, {username.trim() || 'there'}</Text>
+            </View>
+          </View>
+
+          <Text style={styles.discoverTitle}>Find people</Text>
+          <Text style={styles.discoverSub}>
+            Search your circle by role or skill. Friends-of-friends can appear as Confidential.
+          </Text>
+
+          <View style={styles.searchRow}>
+            <Ionicons name="search" size={18} color="#22D3EE" />
+            <TextInput
+              value={query}
+              onChangeText={(t) => {
+                setQuery(t);
+                setSubmitted(t);
+              }}
+              placeholder="Try lawyer, designer, founder…"
+              placeholderTextColor="#64748B"
+              style={styles.searchInput}
+              autoFocus
+            />
+            {query ? (
+              <Pressable onPress={() => runSearch('')}>
+                <Ionicons name="close-circle" size={18} color="#64748B" />
+              </Pressable>
+            ) : null}
+          </View>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipRow}
+          >
+            {CHIPS.map((c) => {
+              const on = submitted.toLowerCase() === c;
+              return (
+                <Pressable
+                  key={c}
+                  onPress={() => runSearch(on ? '' : c)}
+                  style={[styles.chip, on && styles.chipOn]}
+                >
+                  <Text style={[styles.chipTxt, on && styles.chipTxtOn]}>{c}</Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+
+          <View style={[styles.discoverBody, wide && styles.discoverBodyWide]}>
+            <ScrollView
+              style={{ flex: 1 }}
+              contentContainerStyle={styles.resultList}
+              showsVerticalScrollIndicator={false}
+            >
+              {([1, 2] as const).map((degree) => {
+                const group = results.filter((p) => p.degree === degree);
+                if (group.length === 0) return null;
+                return (
+                  <View key={degree} style={{ marginBottom: 18 }}>
+                    <Text style={styles.sectionLabel}>
+                      {degree === 1 ? 'Your connections' : 'Through your circle'}
+                    </Text>
+                    <View style={styles.cardGrid}>
+                      {group.map((p) => {
+                        const active = selected?.id === p.id;
+                        return (
+                          <Pressable
+                            key={p.id}
+                            onPress={() => setSelected(p)}
+                            style={[
+                              styles.personCard,
+                              degree === 1 ? styles.personDirect : styles.personThrough,
+                              active && styles.personActive,
+                              wide && styles.personCardWide,
+                            ]}
+                          >
+                            <View
+                              style={[
+                                styles.avatar,
+                                { backgroundColor: p.color + '33' },
+                                p.ghost && styles.avatarGhost,
+                              ]}
+                            >
+                              <Text style={styles.avatarTxt}>{p.ghost ? '?' : p.name[0]}</Text>
+                            </View>
+                            <View style={{ flex: 1, minWidth: 0 }}>
+                              <Text
+                                style={[styles.personName, p.ghost && styles.personGhost]}
+                                numberOfLines={1}
+                              >
+                                {p.name}
+                              </Text>
+                              <Text style={styles.personRole} numberOfLines={1}>
+                                {p.role}
+                              </Text>
+                              <Text style={styles.personVia} numberOfLines={1}>
+                                {p.via}
+                              </Text>
+                            </View>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </View>
+                );
+              })}
+              {results.length === 0 ? (
+                <Text style={styles.empty}>No matches. Try “lawyer” or “design”.</Text>
+              ) : null}
+            </ScrollView>
+
+            {selected && wide ? (
+              <View style={styles.detailPane}>
+                <View
+                  style={[
+                    styles.detailAvatar,
+                    { backgroundColor: selected.color + '33' },
+                    selected.ghost && styles.avatarGhost,
+                  ]}
+                >
+                  <Text style={styles.detailAvatarTxt}>
+                    {selected.ghost ? '?' : selected.name[0]}
+                  </Text>
+                </View>
+                <Text style={[styles.detailName, selected.ghost && styles.personGhost]}>
+                  {selected.name}
+                </Text>
+                <Text style={styles.detailRole}>{selected.role}</Text>
+                <Text style={styles.detailVia}>{selected.via}</Text>
+                <Text style={styles.detailBody}>
+                  {selected.ghost
+                    ? 'Ghost mode — ask a mutual for an intro to learn more.'
+                    : `In your demo circle as a ${selected.degree === 1 ? 'direct' : '2nd-degree'} path.`}
+                </Text>
+                <Pressable
+                  style={styles.detailCta}
+                  onPress={() =>
+                    setToast(
+                      selected.degree === 1
+                        ? `Opening chat with ${selected.name.split(' ')[0]}…`
+                        : `Intro requested via ${selected.via.replace('Through ', '')}`
+                    )
+                  }
+                >
+                  <Text style={styles.detailCtaTxt}>
+                    {selected.degree === 1 ? 'Message' : 'Ask for intro'}
+                  </Text>
+                </Pressable>
+              </View>
+            ) : null}
+          </View>
+        </View>
+
+        {toast ? (
+          <View style={styles.toast}>
+            <Text style={styles.toastTxt}>{toast}</Text>
+          </View>
+        ) : null}
+
+        {!wide && selected ? (
+          <View style={styles.mobileBar}>
+            <Text style={styles.mobileBarTxt} numberOfLines={1}>
+              {selected.name} · {selected.via}
+            </Text>
+            <Pressable
+              style={styles.mobileBarBtn}
+              onPress={() =>
+                setToast(selected.degree === 1 ? 'Opening chat…' : 'Intro requested')
+              }
+            >
+              <Text style={styles.mobileBarBtnTxt}>
+                {selected.degree === 1 ? 'Message' : 'Ask intro'}
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
       </View>
     );
   }
 
-  // Landing
+  // Landing — copy on top / bottom, orbit only as backdrop (no collision)
   return (
     <View style={styles.page}>
-      <OrbitBackdrop
+      <Orbit
         stage={stage}
         spin={spin}
         pulse={pulse}
         expand={expand}
-        nodePop={nodePop}
-        rotate={rotate}
-        ringScale={ringScale}
-        ringOpacity={ringOpacity}
-        coreScale={coreScale}
+        showCore
       />
 
       <Animated.View
         pointerEvents={phase === 'landing' ? 'auto' : 'none'}
-        style={[styles.overlay, { opacity: fadeUi }]}
+        style={[styles.landingUi, { opacity: fadeUi }]}
       >
-        <Text style={styles.brand}>CIRCLE</Text>
-        <Text style={styles.line}>Your world, as paths — not posts.</Text>
-        <Pressable onPress={startEnter} style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}>
-          <Text style={styles.ctaTxt}>Enter the circle</Text>
-        </Pressable>
+        <View style={styles.landingTop}>
+          <Text style={styles.brand}>CIRCLE</Text>
+          <Text style={styles.line}>Your world, as paths — not posts.</Text>
+        </View>
+
+        <View style={styles.landingBottom}>
+          <Pressable
+            onPress={startEnter}
+            style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
+          >
+            <Text style={styles.ctaTxt}>Enter the circle</Text>
+            <Ionicons name="arrow-forward" size={18} color="#020617" style={{ marginLeft: 10 }} />
+          </Pressable>
+        </View>
       </Animated.View>
 
       <Animated.View pointerEvents="none" style={[styles.flash, { opacity: flash }]} />
@@ -483,60 +519,65 @@ export default function CoinHomePage() {
   );
 }
 
-function OrbitBackdrop({
+function Orbit({
   stage,
   spin,
   pulse,
   expand,
-  nodePop,
-  rotate,
-  ringScale,
-  ringOpacity,
-  coreScale,
   muted,
+  showCore,
 }: {
   stage: number;
   spin: Animated.Value;
   pulse: Animated.Value;
   expand: Animated.Value;
-  nodePop: Animated.Value;
-  rotate?: Animated.AnimatedInterpolation<string>;
-  ringScale?: Animated.AnimatedInterpolation<number> | Animated.Value;
-  ringOpacity?: Animated.AnimatedInterpolation<number> | Animated.Value;
-  coreScale?: Animated.AnimatedInterpolation<number> | Animated.Value;
   muted?: boolean;
+  showCore?: boolean;
 }) {
-  const rot =
-    rotate ??
-    spin.interpolate({
-      inputRange: [0, 1],
-      outputRange: ['0deg', '360deg'],
-    });
-  const rScale =
-    ringScale ??
-    pulse.interpolate({
-      inputRange: [0, 1],
-      outputRange: [1, 1.03],
-    });
-  const rOp =
-    ringOpacity ??
-    (muted
-      ? pulse.interpolate({ inputRange: [0, 1], outputRange: [0.18, 0.28] })
-      : new Animated.Value(0.5));
-  const cScale =
-    coreScale ??
-    pulse.interpolate({
-      inputRange: [0, 1],
-      outputRange: [1, 1.05],
-    });
+  const rotate = spin.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+  const reverse = spin.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '-360deg'],
+  });
+  const breathe = pulse.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.035],
+  });
+  const ringOp = muted
+    ? pulse.interpolate({ inputRange: [0, 1], outputRange: [0.14, 0.22] })
+    : pulse.interpolate({ inputRange: [0, 1], outputRange: [0.4, 0.65] });
+  const fadeOut = expand.interpolate({
+    inputRange: [0, 0.55, 1],
+    outputRange: muted ? [0.45, 0.3, 0] : [1, 0.7, 0],
+  });
+  const outerScale = expand.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.85],
+  });
 
   return (
-    <View style={[styles.stage, { width: stage, height: stage, opacity: muted ? 0.35 : 1 }]}>
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        styles.stage,
+        {
+          width: stage,
+          height: stage,
+          opacity: fadeOut,
+        },
+      ]}
+    >
       <Animated.View
         style={[
           styles.ring,
           styles.ringOuter,
-          { opacity: rOp, transform: [{ rotate: rot }, { scale: rScale }] },
+          {
+            opacity: ringOp,
+            transform: [{ rotate }, { scale: outerScale }],
+          },
         ]}
       />
       <Animated.View
@@ -544,16 +585,8 @@ function OrbitBackdrop({
           styles.ring,
           styles.ringMid,
           {
-            opacity: rOp,
-            transform: [
-              {
-                rotate: spin.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ['0deg', '-360deg'],
-                }),
-              },
-              { scale: rScale },
-            ],
+            opacity: ringOp,
+            transform: [{ rotate: reverse }, { scale: breathe }],
           },
         ]}
       />
@@ -561,7 +594,10 @@ function OrbitBackdrop({
         style={[
           styles.ring,
           styles.ringInner,
-          { opacity: rOp, transform: [{ rotate: rot }, { scale: rScale }] },
+          {
+            opacity: ringOp,
+            transform: [{ rotate }, { scale: breathe }],
+          },
         ]}
       />
 
@@ -570,7 +606,7 @@ function OrbitBackdrop({
         const dist = (stage / 2) * n.r;
         const x = Math.cos(rad) * dist;
         const y = Math.sin(rad) * dist;
-        const stretch = 1.7 + (i % 3) * 0.12;
+        const stretch = 1.55 + (i % 4) * 0.08;
         return (
           <Animated.View
             key={i}
@@ -580,10 +616,7 @@ function OrbitBackdrop({
                 width: n.size,
                 height: n.size,
                 borderRadius: n.size / 2,
-                opacity: nodePop.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: muted ? [0.25, 0.35] : [0.45, 0.95],
-                }),
+                opacity: muted ? 0.35 : 0.85,
                 transform: [
                   {
                     translateX: expand.interpolate({
@@ -597,12 +630,7 @@ function OrbitBackdrop({
                       outputRange: [y, y * stretch],
                     }),
                   },
-                  {
-                    scale: nodePop.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0.4, 1],
-                    }),
-                  },
+                  { scale: breathe },
                 ],
               },
             ]}
@@ -610,10 +638,12 @@ function OrbitBackdrop({
         );
       })}
 
-      <Animated.View style={[styles.core, { transform: [{ scale: cScale }] }]}>
-        <Image source={AVATAR} style={styles.coreImg} />
-      </Animated.View>
-    </View>
+      {showCore ? (
+        <Animated.View style={[styles.core, { transform: [{ scale: breathe }] }]}>
+          <Image source={AVATAR} style={styles.coreImg} />
+        </Animated.View>
+      ) : null}
+    </Animated.View>
   );
 }
 
@@ -632,88 +662,95 @@ const styles = StyleSheet.create({
   },
   ring: {
     position: 'absolute',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderRadius: 9999,
   },
   ringOuter: {
-    width: '88%',
-    height: '88%',
-    borderColor: 'rgba(34,211,238,0.22)',
+    width: '92%',
+    height: '92%',
+    borderColor: 'rgba(34,211,238,0.28)',
   },
   ringMid: {
-    width: '64%',
-    height: '64%',
-    borderColor: 'rgba(148,163,184,0.2)',
+    width: '68%',
+    height: '68%',
+    borderColor: 'rgba(148,163,184,0.22)',
     borderStyle: 'dashed',
   },
   ringInner: {
-    width: '38%',
-    height: '38%',
-    borderColor: 'rgba(34,211,238,0.4)',
+    width: '42%',
+    height: '42%',
+    borderColor: 'rgba(34,211,238,0.45)',
   },
   node: {
     position: 'absolute',
     backgroundColor: '#22D3EE',
     shadowColor: '#22D3EE',
-    shadowOpacity: 0.7,
-    shadowRadius: 8,
+    shadowOpacity: 0.75,
+    shadowRadius: 10,
   },
   core: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     borderWidth: 2,
-    borderColor: 'rgba(248,250,252,0.85)',
+    borderColor: 'rgba(248,250,252,0.9)',
     overflow: 'hidden',
     shadowColor: '#22D3EE',
-    shadowOpacity: 0.45,
-    shadowRadius: 24,
+    shadowOpacity: 0.5,
+    shadowRadius: 28,
+    zIndex: 1,
   },
   coreImg: { width: '100%', height: '100%' },
-  overlay: {
-    alignItems: 'center',
+  landingUi: {
+    ...StyleSheet.absoluteFill,
+    justifyContent: 'space-between',
+    paddingTop: 72,
+    paddingBottom: 64,
     paddingHorizontal: 28,
-    zIndex: 2,
+    zIndex: 3,
   },
+  landingTop: { alignItems: 'center' },
+  landingBottom: { alignItems: 'center' },
   brand: {
     color: '#F8FAFC',
-    fontSize: 56,
+    fontSize: 52,
     fontWeight: '900',
-    letterSpacing: 10,
-    marginBottom: 14,
+    letterSpacing: 8,
+    marginBottom: 12,
+    textAlign: 'center',
   },
   line: {
     color: '#94A3B8',
     fontSize: 17,
-    marginBottom: 36,
     textAlign: 'center',
-    maxWidth: 360,
-    lineHeight: 24,
+    maxWidth: 340,
+    lineHeight: 26,
+    letterSpacing: 0.2,
   },
   cta: {
     backgroundColor: '#F8FAFC',
-    paddingHorizontal: 44,
-    paddingVertical: 18,
+    paddingHorizontal: 40,
+    paddingVertical: 17,
     borderRadius: 999,
     shadowColor: '#22D3EE',
-    shadowOpacity: 0.35,
-    shadowRadius: 20,
+    shadowOpacity: 0.4,
+    shadowRadius: 22,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  ctaFull: { width: '100%', marginTop: 8 },
+  ctaFull: { alignSelf: 'stretch', marginTop: 8 },
   ctaDisabled: { opacity: 0.35 },
   ctaPressed: { transform: [{ scale: 0.98 }], opacity: 0.92 },
   ctaTxt: {
     color: '#020617',
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '800',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
   flash: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(34,211,238,0.28)',
+    backgroundColor: 'rgba(34,211,238,0.3)',
     zIndex: 5,
   },
   storyWrap: {
@@ -809,15 +846,21 @@ const styles = StyleSheet.create({
   discoverPage: {
     flex: 1,
     backgroundColor: '#020617',
+  },
+  discoverInner: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 1100,
+    alignSelf: 'center',
     paddingHorizontal: 28,
-    paddingTop: 36,
-    paddingBottom: 24,
+    paddingTop: 32,
+    paddingBottom: 20,
   },
   discoverTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 28,
+    marginBottom: 24,
   },
   navBrand: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   navMark: { width: 28, height: 28, borderRadius: 14 },
@@ -827,20 +870,27 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 3,
   },
-  hello: { color: '#94A3B8', fontSize: 14, fontWeight: '600' },
+  helloPill: {
+    borderWidth: 1,
+    borderColor: 'rgba(148,163,184,0.2)',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  hello: { color: '#94A3B8', fontSize: 13, fontWeight: '600' },
   discoverTitle: {
     color: '#F8FAFC',
-    fontSize: 32,
+    fontSize: 34,
     fontWeight: '800',
-    letterSpacing: -0.6,
+    letterSpacing: -0.7,
   },
   discoverSub: {
     color: '#94A3B8',
     fontSize: 15,
     lineHeight: 22,
     marginTop: 8,
-    marginBottom: 22,
-    maxWidth: 520,
+    marginBottom: 18,
+    maxWidth: 560,
   },
   searchRow: {
     flexDirection: 'row',
@@ -848,12 +898,11 @@ const styles = StyleSheet.create({
     gap: 10,
     backgroundColor: 'rgba(15,23,42,0.95)',
     borderWidth: 1,
-    borderColor: 'rgba(148,163,184,0.22)',
+    borderColor: 'rgba(34,211,238,0.25)',
     borderRadius: Radii.lg,
     paddingHorizontal: 14,
     paddingVertical: 4,
-    marginBottom: 20,
-    maxWidth: 560,
+    marginBottom: 14,
   },
   searchInput: {
     flex: 1,
@@ -861,7 +910,33 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingVertical: 12,
   },
-  resultList: { paddingBottom: 40, gap: 10, maxWidth: 640 },
+  chipRow: { gap: 8, paddingBottom: 18 },
+  chip: {
+    borderWidth: 1,
+    borderColor: 'rgba(148,163,184,0.25)',
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(15,23,42,0.8)',
+  },
+  chipOn: {
+    borderColor: 'rgba(34,211,238,0.5)',
+    backgroundColor: 'rgba(34,211,238,0.12)',
+  },
+  chipTxt: { color: '#94A3B8', fontSize: 13, fontWeight: '700' },
+  chipTxtOn: { color: '#22D3EE' },
+  discoverBody: { flex: 1, minHeight: 0 },
+  discoverBodyWide: { flexDirection: 'row', gap: 22 },
+  resultList: { paddingBottom: 80 },
+  sectionLabel: {
+    color: '#64748B',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.9,
+    textTransform: 'uppercase',
+    marginBottom: 10,
+  },
+  cardGrid: { gap: 10 },
   personCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -870,19 +945,23 @@ const styles = StyleSheet.create({
     borderRadius: Radii.lg,
     borderWidth: 1,
   },
+  personCardWide: {},
   personDirect: {
     backgroundColor: 'rgba(34,211,238,0.06)',
     borderColor: 'rgba(34,211,238,0.18)',
   },
   personThrough: {
-    backgroundColor: 'rgba(148,163,184,0.06)',
+    backgroundColor: 'rgba(148,163,184,0.05)',
     borderColor: 'rgba(148,163,184,0.16)',
   },
+  personActive: {
+    borderColor: '#22D3EE',
+    backgroundColor: 'rgba(34,211,238,0.12)',
+  },
   avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(34,211,238,0.2)',
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -892,13 +971,64 @@ const styles = StyleSheet.create({
   personGhost: { fontStyle: 'italic', color: '#CBD5E1' },
   personRole: { color: '#94A3B8', fontSize: 13, marginTop: 2 },
   personVia: { color: '#22D3EE', fontSize: 11, fontWeight: '600', marginTop: 3 },
-  askBtn: {
+  detailPane: {
+    width: 300,
+    backgroundColor: 'rgba(15,23,42,0.95)',
+    borderRadius: Radii.xl,
     borderWidth: 1,
-    borderColor: 'rgba(248,250,252,0.2)',
-    borderRadius: Radii.full,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    borderColor: 'rgba(148,163,184,0.18)',
+    padding: 22,
   },
-  askTxt: { color: '#F8FAFC', fontSize: 12, fontWeight: '700' },
+  detailAvatar: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  detailAvatarTxt: { color: '#F8FAFC', fontSize: 28, fontWeight: '800' },
+  detailName: { color: '#F8FAFC', fontSize: 22, fontWeight: '800' },
+  detailRole: { color: '#94A3B8', marginTop: 6, fontSize: 14 },
+  detailVia: { color: '#22D3EE', marginTop: 8, fontWeight: '700', fontSize: 13 },
+  detailBody: { color: '#94A3B8', marginTop: 14, lineHeight: 21, fontSize: 14 },
+  detailCta: {
+    marginTop: 20,
+    backgroundColor: '#22D3EE',
+    borderRadius: Radii.md,
+    paddingVertical: 13,
+    alignItems: 'center',
+  },
+  detailCtaTxt: { color: '#020617', fontWeight: '800', fontSize: 15 },
   empty: { color: '#64748B', marginTop: 24, fontSize: 14 },
+  toast: {
+    position: 'absolute',
+    bottom: 28,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(15,23,42,0.95)',
+    borderWidth: 1,
+    borderColor: 'rgba(34,211,238,0.35)',
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: Radii.full,
+  },
+  toastTxt: { color: '#F8FAFC', fontWeight: '600', fontSize: 13 },
+  mobileBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(148,163,184,0.15)',
+    backgroundColor: 'rgba(2,6,23,0.96)',
+  },
+  mobileBarTxt: { flex: 1, color: '#CBD5E1', fontSize: 13 },
+  mobileBarBtn: {
+    backgroundColor: '#22D3EE',
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  mobileBarBtnTxt: { color: '#020617', fontWeight: '800', fontSize: 13 },
 });
