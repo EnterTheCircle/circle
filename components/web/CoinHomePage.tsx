@@ -461,6 +461,7 @@ export default function CoinHomePage() {
             </Pressable>
           </View>
 
+          <Text style={styles.brandEyebrow}>ENTER THE</Text>
           <Text style={styles.brand}>
             CIR<Text style={styles.brandAccent}>CLE</Text>
           </Text>
@@ -688,27 +689,36 @@ const styles = StyleSheet.create({
   },
   navPillTxtAccent: { color: '#67E8F9' },
   landingBottom: { alignItems: 'center' },
+  brandEyebrow: {
+    color: '#67E8F9',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 4,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
   brand: {
     color: '#F8FAFC',
-    fontSize: 64,
+    fontSize: 68,
     fontWeight: '200',
-    letterSpacing: 14,
+    letterSpacing: 16,
     marginBottom: 14,
     textAlign: 'center',
-    textShadowColor: 'rgba(34,211,238,0.35)',
+    textShadowColor: 'rgba(34,211,238,0.45)',
     textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 24,
+    textShadowRadius: 28,
   },
   brandAccent: {
-    color: '#F8FAFC',
+    color: '#A5F3FC',
     fontWeight: '800',
-    letterSpacing: 14,
+    letterSpacing: 16,
   },
   brandRule: {
-    width: 48,
-    height: 1,
-    backgroundColor: 'rgba(34,211,238,0.45)',
+    width: 56,
+    height: 2,
+    backgroundColor: 'rgba(34,211,238,0.55)',
     marginBottom: 16,
+    borderRadius: 2,
   },
   line: {
     color: '#94A3B8',

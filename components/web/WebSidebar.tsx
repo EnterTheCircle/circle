@@ -71,6 +71,21 @@ export function WebSidebar() {
       </Pressable>
       <Text style={styles.tagline}>Need someone? Ask your circle.</Text>
 
+      <View style={styles.marketRow}>
+        <Pressable onPress={() => router.push('/about')} style={styles.marketPill}>
+          <Text style={styles.marketPillTxt}>About</Text>
+        </Pressable>
+        <Pressable onPress={() => router.push('/tokenomics')} style={styles.marketPill}>
+          <Text style={styles.marketPillTxt}>Tokenomics</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => router.push('/circle-token')}
+          style={[styles.marketPill, styles.marketPillAccent]}
+        >
+          <Text style={[styles.marketPillTxt, styles.marketPillTxtAccent]}>$CIRCLE</Text>
+        </Pressable>
+      </View>
+
       <View style={styles.nav}>
         {NAV.map((item) => {
           const active = item.match(pathname);
@@ -147,9 +162,34 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     fontSize: 12,
     marginTop: 10,
-    marginBottom: 24,
+    marginBottom: 14,
     lineHeight: 17,
   },
+  marketRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 20,
+  },
+  marketPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(226,232,240,0.12)',
+    backgroundColor: 'rgba(248,250,252,0.04)',
+  },
+  marketPillAccent: {
+    borderColor: 'rgba(34,211,238,0.35)',
+    backgroundColor: 'rgba(34,211,238,0.08)',
+  },
+  marketPillTxt: {
+    color: 'rgba(226,232,240,0.65)',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+  },
+  marketPillTxtAccent: { color: '#67E8F9' },
   nav: { gap: 6 },
   item: {
     flexDirection: 'row',
