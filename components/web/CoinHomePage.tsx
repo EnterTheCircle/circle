@@ -1,22 +1,23 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
   Image,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
   useWindowDimensions,
 } from 'react-native';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { AccountState, useApp } from '@/context/AppContext';
 import { Radii } from '@/constants/theme';
 
 const AVATAR = require('../../assets/images/coin/avatar.jpg');
 
-type Phase = 'landing' | 'story' | 'auth' | 'discover';
+type Phase = 'landing' | 'story' | 'auth';
 
 const NODES = [
   { angle: 12, r: 0.34, size: 11 },
@@ -52,43 +53,17 @@ const STORY_STEPS = [
   },
 ];
 
-const CHIPS = ['lawyer', 'designer', 'founder', 'engineer', 'stylist', 'chef'];
-
-type Phantom = {
-  id: string;
-  name: string;
-  role: string;
-  via: string;
-  degree: 1 | 2;
-  tags: string[];
-  ghost?: boolean;
-  color: string;
-};
-
-const PHANTOMS: Phantom[] = [
-  { id: '1', name: 'Misha V.', role: 'Product Designer', via: 'Your connections', degree: 1, tags: ['design', 'figma', 'brand', 'designer'], color: '#22D3EE' },
-  { id: '2', name: 'James C.', role: 'Venture Capital', via: 'Your connections', degree: 1, tags: ['startups', 'markets', 'founder'], color: '#67E8F9' },
-  { id: '3', name: 'Confidential', role: 'Details hidden', via: 'Through Misha', degree: 2, tags: ['lawyer', 'counsel', 'legal'], ghost: true, color: '#64748B' },
-  { id: '4', name: 'Priya S.', role: 'Data Scientist', via: 'Through James', degree: 2, tags: ['ai', 'ml', 'engineer'], color: '#38BDF8' },
-  { id: '5', name: 'Alex R.', role: 'Software Engineer', via: 'Your connections', degree: 1, tags: ['engineer', 'ai', 'builder'], color: '#2DD4BF' },
-  { id: '6', name: 'Confidential', role: 'Details hidden', via: 'Through Alex', degree: 2, tags: ['stylist', 'beauty', 'hair'], ghost: true, color: '#64748B' },
-  { id: '7', name: 'Sarah K.', role: 'Brand Strategist', via: 'Your connections', degree: 1, tags: ['brand', 'marketing', 'creator', 'designer'], color: '#A5F3FC' },
-  { id: '8', name: 'Olivia M.', role: 'Real Estate', via: 'Through Sarah', degree: 2, tags: ['real estate', 'apartment', 'broker'], color: '#5EEAD4' },
-  { id: '9', name: 'Chris N.', role: 'Chef', via: 'Through Misha', degree: 2, tags: ['chef', 'food', 'restaurant'], color: '#67E8F9' },
-  { id: '10', name: 'Confidential', role: 'Details hidden', via: 'Through James', degree: 2, tags: ['founder', 'ceo', 'operator'], ghost: true, color: '#64748B' },
-];
-
-/** Web marketing funnel — landing → story → demo auth → phantom search */
+/**
+ * Web funnel: landing → how it works → demo login → real atom / Circle app.
+ */
 export default function CoinHomePage() {
   const { width, height } = useWindowDimensions();
+  const { enterFromLanding, updateProfile, showToast } = useApp();
   const [phase, setPhase] = useState<Phase>('landing');
   const [storyIndex, setStoryIndex] = useState(0);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [query, setQuery] = useState('');
-  const [submitted, setSubmitted] = useState('');
-  const [selected, setSelected] = useState<Phantom | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const entering = useRef(false);
 
   const spin = useRef(new Animated.Value(0)).current;
@@ -98,7 +73,6 @@ export default function CoinHomePage() {
   const flash = useRef(new Animated.Value(0)).current;
   const storyFade = useRef(new Animated.Value(1)).current;
 
-  // Orbit sits behind UI — sized so it doesn't fight the copy
   const stage = Math.min(width * 0.78, height * 0.72, 720);
 
   useEffect(() => {
@@ -145,29 +119,6 @@ export default function CoinHomePage() {
     }).start();
   }, [storyIndex, phase, storyFade]);
 
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 2200);
-    return () => clearTimeout(t);
-  }, [toast]);
-
-  const results = useMemo(() => {
-    const q = submitted.trim().toLowerCase();
-    if (!q) return PHANTOMS;
-    return PHANTOMS.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.role.toLowerCase().includes(q) ||
-        p.via.toLowerCase().includes(q) ||
-        p.tags.some((t) => t.includes(q))
-    );
-  }, [submitted]);
-
-  useEffect(() => {
-    if (results.length === 0) setSelected(null);
-    else if (!selected || !results.some((r) => r.id === selected.id)) setSelected(results[0]);
-  }, [results, selected]);
-
   const startEnter = () => {
     if (entering.current || phase !== 'landing') return;
     entering.current = true;
@@ -200,28 +151,31 @@ export default function CoinHomePage() {
     else setPhase('auth');
   };
 
-  const dummyEnter = () => {
-    if (username.trim().length < 2 || password.trim().length < 2) return;
-    setPhase('discover');
-  };
-
-  const runSearch = (q: string) => {
-    setQuery(q);
-    setSubmitted(q);
+  const dummyEnter = async () => {
+    if (username.trim().length < 2 || password.trim().length < 2 || busy) return;
+    setBusy(true);
+    const account: AccountState = {
+      phone: '',
+      contactsPermission: 'undetermined',
+      contactChannel: 'imessage',
+      contactHandle: username.trim().toLowerCase(),
+    };
+    try {
+      updateProfile({ name: username.trim() });
+      await enterFromLanding(account);
+      showToast(`Welcome, ${username.trim().split(' ')[0]}`);
+      // Real atom / Circle screen (sidebar + orbit)
+      router.replace('/');
+    } finally {
+      setBusy(false);
+    }
   };
 
   if (phase === 'story') {
     const step = STORY_STEPS[storyIndex];
     return (
       <View style={styles.page}>
-        <Orbit
-          stage={stage * 0.85}
-          spin={spin}
-          pulse={pulse}
-          expand={expand}
-          muted
-          showCore
-        />
+        <Orbit stage={stage * 0.85} spin={spin} pulse={pulse} expand={expand} muted showCore />
         <Animated.View style={[styles.storyWrap, { opacity: storyFade }]}>
           <Text style={styles.storyKicker}>
             How it works · {storyIndex + 1} / {STORY_STEPS.length}
@@ -250,7 +204,7 @@ export default function CoinHomePage() {
   }
 
   if (phase === 'auth') {
-    const can = username.trim().length >= 2 && password.trim().length >= 2;
+    const can = username.trim().length >= 2 && password.trim().length >= 2 && !busy;
     return (
       <View style={styles.page}>
         <View style={styles.authCard}>
@@ -285,214 +239,16 @@ export default function CoinHomePage() {
               pressed && can && styles.ctaPressed,
             ]}
           >
-            <Text style={styles.ctaTxt}>Enter</Text>
+            <Text style={styles.ctaTxt}>{busy ? 'Entering…' : 'Enter'}</Text>
           </Pressable>
         </View>
       </View>
     );
   }
 
-  if (phase === 'discover') {
-    const wide = width >= 960;
-    return (
-      <View style={styles.discoverPage}>
-        <View style={styles.discoverInner}>
-          <View style={styles.discoverTop}>
-            <View style={styles.navBrand}>
-              <Image source={AVATAR} style={styles.navMark} />
-              <Text style={styles.navWord}>CIRCLE</Text>
-            </View>
-            <View style={styles.helloPill}>
-              <Text style={styles.hello}>Hi, {username.trim() || 'there'}</Text>
-            </View>
-          </View>
-
-          <Text style={styles.discoverTitle}>Find people</Text>
-          <Text style={styles.discoverSub}>
-            Search your circle by role or skill. Friends-of-friends can appear as Confidential.
-          </Text>
-
-          <View style={styles.searchRow}>
-            <Ionicons name="search" size={18} color="#22D3EE" />
-            <TextInput
-              value={query}
-              onChangeText={(t) => {
-                setQuery(t);
-                setSubmitted(t);
-              }}
-              placeholder="Try lawyer, designer, founder…"
-              placeholderTextColor="#64748B"
-              style={styles.searchInput}
-              autoFocus
-            />
-            {query ? (
-              <Pressable onPress={() => runSearch('')}>
-                <Ionicons name="close-circle" size={18} color="#64748B" />
-              </Pressable>
-            ) : null}
-          </View>
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.chipRow}
-          >
-            {CHIPS.map((c) => {
-              const on = submitted.toLowerCase() === c;
-              return (
-                <Pressable
-                  key={c}
-                  onPress={() => runSearch(on ? '' : c)}
-                  style={[styles.chip, on && styles.chipOn]}
-                >
-                  <Text style={[styles.chipTxt, on && styles.chipTxtOn]}>{c}</Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-
-          <View style={[styles.discoverBody, wide && styles.discoverBodyWide]}>
-            <ScrollView
-              style={{ flex: 1 }}
-              contentContainerStyle={styles.resultList}
-              showsVerticalScrollIndicator={false}
-            >
-              {([1, 2] as const).map((degree) => {
-                const group = results.filter((p) => p.degree === degree);
-                if (group.length === 0) return null;
-                return (
-                  <View key={degree} style={{ marginBottom: 18 }}>
-                    <Text style={styles.sectionLabel}>
-                      {degree === 1 ? 'Your connections' : 'Through your circle'}
-                    </Text>
-                    <View style={styles.cardGrid}>
-                      {group.map((p) => {
-                        const active = selected?.id === p.id;
-                        return (
-                          <Pressable
-                            key={p.id}
-                            onPress={() => setSelected(p)}
-                            style={[
-                              styles.personCard,
-                              degree === 1 ? styles.personDirect : styles.personThrough,
-                              active && styles.personActive,
-                              wide && styles.personCardWide,
-                            ]}
-                          >
-                            <View
-                              style={[
-                                styles.avatar,
-                                { backgroundColor: p.color + '33' },
-                                p.ghost && styles.avatarGhost,
-                              ]}
-                            >
-                              <Text style={styles.avatarTxt}>{p.ghost ? '?' : p.name[0]}</Text>
-                            </View>
-                            <View style={{ flex: 1, minWidth: 0 }}>
-                              <Text
-                                style={[styles.personName, p.ghost && styles.personGhost]}
-                                numberOfLines={1}
-                              >
-                                {p.name}
-                              </Text>
-                              <Text style={styles.personRole} numberOfLines={1}>
-                                {p.role}
-                              </Text>
-                              <Text style={styles.personVia} numberOfLines={1}>
-                                {p.via}
-                              </Text>
-                            </View>
-                          </Pressable>
-                        );
-                      })}
-                    </View>
-                  </View>
-                );
-              })}
-              {results.length === 0 ? (
-                <Text style={styles.empty}>No matches. Try “lawyer” or “design”.</Text>
-              ) : null}
-            </ScrollView>
-
-            {selected && wide ? (
-              <View style={styles.detailPane}>
-                <View
-                  style={[
-                    styles.detailAvatar,
-                    { backgroundColor: selected.color + '33' },
-                    selected.ghost && styles.avatarGhost,
-                  ]}
-                >
-                  <Text style={styles.detailAvatarTxt}>
-                    {selected.ghost ? '?' : selected.name[0]}
-                  </Text>
-                </View>
-                <Text style={[styles.detailName, selected.ghost && styles.personGhost]}>
-                  {selected.name}
-                </Text>
-                <Text style={styles.detailRole}>{selected.role}</Text>
-                <Text style={styles.detailVia}>{selected.via}</Text>
-                <Text style={styles.detailBody}>
-                  {selected.ghost
-                    ? 'Ghost mode — ask a mutual for an intro to learn more.'
-                    : `In your demo circle as a ${selected.degree === 1 ? 'direct' : '2nd-degree'} path.`}
-                </Text>
-                <Pressable
-                  style={styles.detailCta}
-                  onPress={() =>
-                    setToast(
-                      selected.degree === 1
-                        ? `Opening chat with ${selected.name.split(' ')[0]}…`
-                        : `Intro requested via ${selected.via.replace('Through ', '')}`
-                    )
-                  }
-                >
-                  <Text style={styles.detailCtaTxt}>
-                    {selected.degree === 1 ? 'Message' : 'Ask for intro'}
-                  </Text>
-                </Pressable>
-              </View>
-            ) : null}
-          </View>
-        </View>
-
-        {toast ? (
-          <View style={styles.toast}>
-            <Text style={styles.toastTxt}>{toast}</Text>
-          </View>
-        ) : null}
-
-        {!wide && selected ? (
-          <View style={styles.mobileBar}>
-            <Text style={styles.mobileBarTxt} numberOfLines={1}>
-              {selected.name} · {selected.via}
-            </Text>
-            <Pressable
-              style={styles.mobileBarBtn}
-              onPress={() =>
-                setToast(selected.degree === 1 ? 'Opening chat…' : 'Intro requested')
-              }
-            >
-              <Text style={styles.mobileBarBtnTxt}>
-                {selected.degree === 1 ? 'Message' : 'Ask intro'}
-              </Text>
-            </Pressable>
-          </View>
-        ) : null}
-      </View>
-    );
-  }
-
-  // Landing — copy on top / bottom, orbit only as backdrop (no collision)
   return (
     <View style={styles.page}>
-      <Orbit
-        stage={stage}
-        spin={spin}
-        pulse={pulse}
-        expand={expand}
-        showCore
-      />
+      <Orbit stage={stage} spin={spin} pulse={pulse} expand={expand} showCore />
 
       <Animated.View
         pointerEvents={phase === 'landing' ? 'auto' : 'none'}
@@ -561,43 +317,27 @@ function Orbit({
   return (
     <Animated.View
       pointerEvents="none"
-      style={[
-        styles.stage,
-        {
-          width: stage,
-          height: stage,
-          opacity: fadeOut,
-        },
-      ]}
+      style={[styles.stage, { width: stage, height: stage, opacity: fadeOut }]}
     >
       <Animated.View
         style={[
           styles.ring,
           styles.ringOuter,
-          {
-            opacity: ringOp,
-            transform: [{ rotate }, { scale: outerScale }],
-          },
+          { opacity: ringOp, transform: [{ rotate }, { scale: outerScale }] },
         ]}
       />
       <Animated.View
         style={[
           styles.ring,
           styles.ringMid,
-          {
-            opacity: ringOp,
-            transform: [{ rotate: reverse }, { scale: breathe }],
-          },
+          { opacity: ringOp, transform: [{ rotate: reverse }, { scale: breathe }] },
         ]}
       />
       <Animated.View
         style={[
           styles.ring,
           styles.ringInner,
-          {
-            opacity: ringOp,
-            transform: [{ rotate }, { scale: breathe }],
-          },
+          { opacity: ringOp, transform: [{ rotate }, { scale: breathe }] },
         ]}
       />
 
@@ -843,192 +583,4 @@ const styles = StyleSheet.create({
     color: '#F8FAFC',
     fontSize: 16,
   },
-  discoverPage: {
-    flex: 1,
-    backgroundColor: '#020617',
-  },
-  discoverInner: {
-    flex: 1,
-    width: '100%',
-    maxWidth: 1100,
-    alignSelf: 'center',
-    paddingHorizontal: 28,
-    paddingTop: 32,
-    paddingBottom: 20,
-  },
-  discoverTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-  },
-  navBrand: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  navMark: { width: 28, height: 28, borderRadius: 14 },
-  navWord: {
-    color: '#F8FAFC',
-    fontSize: 14,
-    fontWeight: '800',
-    letterSpacing: 3,
-  },
-  helloPill: {
-    borderWidth: 1,
-    borderColor: 'rgba(148,163,184,0.2)',
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  hello: { color: '#94A3B8', fontSize: 13, fontWeight: '600' },
-  discoverTitle: {
-    color: '#F8FAFC',
-    fontSize: 34,
-    fontWeight: '800',
-    letterSpacing: -0.7,
-  },
-  discoverSub: {
-    color: '#94A3B8',
-    fontSize: 15,
-    lineHeight: 22,
-    marginTop: 8,
-    marginBottom: 18,
-    maxWidth: 560,
-  },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: 'rgba(15,23,42,0.95)',
-    borderWidth: 1,
-    borderColor: 'rgba(34,211,238,0.25)',
-    borderRadius: Radii.lg,
-    paddingHorizontal: 14,
-    paddingVertical: 4,
-    marginBottom: 14,
-  },
-  searchInput: {
-    flex: 1,
-    color: '#F8FAFC',
-    fontSize: 16,
-    paddingVertical: 12,
-  },
-  chipRow: { gap: 8, paddingBottom: 18 },
-  chip: {
-    borderWidth: 1,
-    borderColor: 'rgba(148,163,184,0.25)',
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    backgroundColor: 'rgba(15,23,42,0.8)',
-  },
-  chipOn: {
-    borderColor: 'rgba(34,211,238,0.5)',
-    backgroundColor: 'rgba(34,211,238,0.12)',
-  },
-  chipTxt: { color: '#94A3B8', fontSize: 13, fontWeight: '700' },
-  chipTxtOn: { color: '#22D3EE' },
-  discoverBody: { flex: 1, minHeight: 0 },
-  discoverBodyWide: { flexDirection: 'row', gap: 22 },
-  resultList: { paddingBottom: 80 },
-  sectionLabel: {
-    color: '#64748B',
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.9,
-    textTransform: 'uppercase',
-    marginBottom: 10,
-  },
-  cardGrid: { gap: 10 },
-  personCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 14,
-    borderRadius: Radii.lg,
-    borderWidth: 1,
-  },
-  personCardWide: {},
-  personDirect: {
-    backgroundColor: 'rgba(34,211,238,0.06)',
-    borderColor: 'rgba(34,211,238,0.18)',
-  },
-  personThrough: {
-    backgroundColor: 'rgba(148,163,184,0.05)',
-    borderColor: 'rgba(148,163,184,0.16)',
-  },
-  personActive: {
-    borderColor: '#22D3EE',
-    backgroundColor: 'rgba(34,211,238,0.12)',
-  },
-  avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarGhost: { backgroundColor: 'rgba(100,116,139,0.35)' },
-  avatarTxt: { color: '#F8FAFC', fontWeight: '800', fontSize: 16 },
-  personName: { color: '#F8FAFC', fontWeight: '700', fontSize: 15 },
-  personGhost: { fontStyle: 'italic', color: '#CBD5E1' },
-  personRole: { color: '#94A3B8', fontSize: 13, marginTop: 2 },
-  personVia: { color: '#22D3EE', fontSize: 11, fontWeight: '600', marginTop: 3 },
-  detailPane: {
-    width: 300,
-    backgroundColor: 'rgba(15,23,42,0.95)',
-    borderRadius: Radii.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(148,163,184,0.18)',
-    padding: 22,
-  },
-  detailAvatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 14,
-  },
-  detailAvatarTxt: { color: '#F8FAFC', fontSize: 28, fontWeight: '800' },
-  detailName: { color: '#F8FAFC', fontSize: 22, fontWeight: '800' },
-  detailRole: { color: '#94A3B8', marginTop: 6, fontSize: 14 },
-  detailVia: { color: '#22D3EE', marginTop: 8, fontWeight: '700', fontSize: 13 },
-  detailBody: { color: '#94A3B8', marginTop: 14, lineHeight: 21, fontSize: 14 },
-  detailCta: {
-    marginTop: 20,
-    backgroundColor: '#22D3EE',
-    borderRadius: Radii.md,
-    paddingVertical: 13,
-    alignItems: 'center',
-  },
-  detailCtaTxt: { color: '#020617', fontWeight: '800', fontSize: 15 },
-  empty: { color: '#64748B', marginTop: 24, fontSize: 14 },
-  toast: {
-    position: 'absolute',
-    bottom: 28,
-    alignSelf: 'center',
-    backgroundColor: 'rgba(15,23,42,0.95)',
-    borderWidth: 1,
-    borderColor: 'rgba(34,211,238,0.35)',
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    borderRadius: Radii.full,
-  },
-  toastTxt: { color: '#F8FAFC', fontWeight: '600', fontSize: 13 },
-  mobileBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(148,163,184,0.15)',
-    backgroundColor: 'rgba(2,6,23,0.96)',
-  },
-  mobileBarTxt: { flex: 1, color: '#CBD5E1', fontSize: 13 },
-  mobileBarBtn: {
-    backgroundColor: '#22D3EE',
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-  },
-  mobileBarBtnTxt: { color: '#020617', fontWeight: '800', fontSize: 13 },
 });
