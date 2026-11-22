@@ -42,6 +42,8 @@ function AppStack() {
         headerTintColor: Colors.text,
         headerShadowVisible: false,
         contentStyle: { backgroundColor: Colors.bg },
+        // Avoid RN Web default light gray card flash over the dark UI
+        animation: 'fade',
       }}
     >
       <Stack.Protected guard={!hasSignedUp}>

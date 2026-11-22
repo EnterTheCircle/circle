@@ -3,6 +3,7 @@ import {
   Animated,
   Easing,
   Image,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -16,6 +17,8 @@ import { AccountState, useApp } from '@/context/AppContext';
 import { Radii } from '@/constants/theme';
 
 const AVATAR = require('../../assets/images/coin/avatar.jpg');
+/** Native driver is flaky for multi-prop web animations — callbacks never fire. */
+const NATIVE = Platform.OS !== 'web';
 
 type Phase = 'landing' | 'story' | 'auth';
 
@@ -81,7 +84,7 @@ export default function CoinHomePage() {
         toValue: 1,
         duration: 52000,
         easing: Easing.linear,
-        useNativeDriver: true,
+        useNativeDriver: NATIVE,
       })
     );
     const pulseLoop = Animated.loop(
@@ -90,13 +93,13 @@ export default function CoinHomePage() {
           toValue: 1,
           duration: 2400,
           easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
+          useNativeDriver: NATIVE,
         }),
         Animated.timing(pulse, {
           toValue: 0,
           duration: 2400,
           easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
+          useNativeDriver: NATIVE,
         }),
       ])
     );
@@ -115,7 +118,7 @@ export default function CoinHomePage() {
       toValue: 1,
       duration: 380,
       easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
+      useNativeDriver: NATIVE,
     }).start();
   }, [storyIndex, phase, storyFade]);
 
@@ -123,27 +126,36 @@ export default function CoinHomePage() {
     if (entering.current || phase !== 'landing') return;
     entering.current = true;
 
+    let advanced = false;
+    const goStory = () => {
+      if (advanced) return;
+      advanced = true;
+      setPhase('story');
+      entering.current = false;
+    };
+
     Animated.parallel([
       Animated.timing(fadeUi, {
         toValue: 0,
         duration: 360,
         easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
+        useNativeDriver: NATIVE,
       }),
       Animated.timing(expand, {
         toValue: 1,
-        duration: 1100,
+        duration: 900,
         easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
+        useNativeDriver: NATIVE,
       }),
       Animated.sequence([
-        Animated.timing(flash, { toValue: 0.85, duration: 220, useNativeDriver: true }),
-        Animated.timing(flash, { toValue: 0, duration: 650, useNativeDriver: true }),
+        Animated.timing(flash, { toValue: 0.85, duration: 200, useNativeDriver: NATIVE }),
+        Animated.timing(flash, { toValue: 0, duration: 500, useNativeDriver: NATIVE }),
       ]),
-    ]).start(() => {
-      setPhase('story');
-      entering.current = false;
+    ]).start(({ finished }) => {
+      if (finished) goStory();
     });
+    // Hard fallback so the funnel never sticks on landing (web Animated quirks)
+    setTimeout(goStory, 700);
   };
 
   const nextStory = () => {
@@ -164,8 +176,16 @@ export default function CoinHomePage() {
       updateProfile({ name: username.trim() });
       await enterFromLanding(account);
       showToast(`Welcome, ${username.trim().split(' ')[0]}`);
-      // Real atom / Circle screen (sidebar + orbit)
+      // Stay under GitHub Pages base path (/circle)
       router.replace('/');
+      // Fallback if replace is a no-op while Protected routes remount
+      setTimeout(() => {
+        try {
+          router.replace('/(tabs)');
+        } catch {
+          /* ignore */
+        }
+      }, 50);
     } finally {
       setBusy(false);
     }
