@@ -12,7 +12,6 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { AccountState, useApp } from '@/context/AppContext';
 import { Radii } from '@/constants/theme';
 import {
@@ -47,17 +46,14 @@ const NODES = [
 
 const STORY_STEPS = [
   {
-    icon: 'planet-outline' as const,
     title: 'See who you actually know',
     body: 'Your world as paths — first connections, then the people through them. No follower theater.',
   },
   {
-    icon: 'search-outline' as const,
     title: 'Find who you need',
     body: 'Lawyer. Designer. Operator. Search inside your trusted radius — not the open internet.',
   },
   {
-    icon: 'hand-left-outline' as const,
     title: 'Ask for a warm intro',
     body: 'The mutual decides. If they vouch, you talk where they already live — their real chat apps.',
   },
@@ -260,7 +256,9 @@ export default function CoinHomePage() {
             How it works · {storyIndex + 1} / {STORY_STEPS.length}
           </Text>
           <View style={styles.storyIcon}>
-            <Ionicons name={step.icon} size={30} color="#22D3EE" />
+            <Text style={styles.storyGlyph}>
+              {storyIndex === 0 ? '◎' : storyIndex === 1 ? '⌕' : '↝'}
+            </Text>
           </View>
           <Text style={styles.storyTitle}>{step.title}</Text>
           <Text style={styles.storyBody}>{step.body}</Text>
@@ -443,20 +441,30 @@ export default function CoinHomePage() {
       >
         <View style={styles.landingTop}>
           <View style={styles.landingNav}>
-            <Pressable onPress={() => router.push('/about')} style={styles.landingNavItem}>
-              <Text style={styles.landingNavTxt}>About</Text>
+            <Pressable
+              onPress={() => router.push('/about')}
+              style={({ pressed }) => [styles.navPill, pressed && styles.navPillPressed]}
+            >
+              <Text style={styles.navPillTxt}>About</Text>
             </Pressable>
-            <Text style={styles.landingNavDot}>·</Text>
-            <Pressable onPress={() => router.push('/tokenomics')} style={styles.landingNavItem}>
-              <Text style={styles.landingNavTxt}>Tokenomics</Text>
+            <Pressable
+              onPress={() => router.push('/tokenomics')}
+              style={({ pressed }) => [styles.navPill, pressed && styles.navPillPressed]}
+            >
+              <Text style={styles.navPillTxt}>Tokenomics</Text>
             </Pressable>
-            <Text style={styles.landingNavDot}>·</Text>
-            <Pressable onPress={() => router.push('/circle-token')} style={styles.landingNavItem}>
-              <Text style={styles.landingNavTxt}>$CIRCLE</Text>
+            <Pressable
+              onPress={() => router.push('/circle-token')}
+              style={({ pressed }) => [styles.navPill, styles.navPillAccent, pressed && styles.navPillPressed]}
+            >
+              <Text style={[styles.navPillTxt, styles.navPillTxtAccent]}>$CIRCLE</Text>
             </Pressable>
           </View>
 
-          <Text style={styles.brand}>CIRCLE</Text>
+          <Text style={styles.brand}>
+            CIR<Text style={styles.brandAccent}>CLE</Text>
+          </Text>
+          <View style={styles.brandRule} />
           <Text style={styles.line}>Your world, as paths — not posts.</Text>
         </View>
 
@@ -466,7 +474,7 @@ export default function CoinHomePage() {
             style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
           >
             <Text style={styles.ctaTxt}>Enter the circle</Text>
-            <Ionicons name="arrow-forward" size={18} color="#020617" style={{ marginLeft: 10 }} />
+            <Text style={styles.ctaArrow}>→</Text>
           </Pressable>
         </View>
       </Animated.View>
@@ -656,40 +664,60 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flexWrap: 'wrap',
-    gap: 4,
-    marginBottom: 28,
+    gap: 10,
+    marginBottom: 32,
   },
-  landingNavItem: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+  navPill: {
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(226,232,240,0.14)',
+    backgroundColor: 'rgba(248,250,252,0.04)',
   },
-  landingNavTxt: {
-    color: 'rgba(226,232,240,0.55)',
-    fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: 0.4,
+  navPillAccent: {
+    borderColor: 'rgba(34,211,238,0.35)',
+    backgroundColor: 'rgba(34,211,238,0.08)',
   },
-  landingNavDot: {
-    color: 'rgba(148,163,184,0.35)',
-    fontSize: 13,
-    paddingHorizontal: 2,
+  navPillPressed: { opacity: 0.8, transform: [{ scale: 0.98 }] },
+  navPillTxt: {
+    color: 'rgba(226,232,240,0.72)',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.8,
   },
+  navPillTxtAccent: { color: '#67E8F9' },
   landingBottom: { alignItems: 'center' },
   brand: {
     color: '#F8FAFC',
-    fontSize: 52,
-    fontWeight: '900',
-    letterSpacing: 8,
-    marginBottom: 12,
+    fontSize: 64,
+    fontWeight: '200',
+    letterSpacing: 14,
+    marginBottom: 14,
     textAlign: 'center',
+    textShadowColor: 'rgba(34,211,238,0.35)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 24,
+  },
+  brandAccent: {
+    color: '#F8FAFC',
+    fontWeight: '800',
+    letterSpacing: 14,
+  },
+  brandRule: {
+    width: 48,
+    height: 1,
+    backgroundColor: 'rgba(34,211,238,0.45)',
+    marginBottom: 16,
   },
   line: {
     color: '#94A3B8',
-    fontSize: 17,
+    fontSize: 16,
     textAlign: 'center',
     maxWidth: 340,
     lineHeight: 26,
-    letterSpacing: 0.2,
+    letterSpacing: 0.3,
+    fontWeight: '400',
   },
   cta: {
     backgroundColor: '#F8FAFC',
@@ -702,6 +730,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 10,
   },
   ctaFull: { alignSelf: 'stretch', marginTop: 8 },
   ctaDisabled: { opacity: 0.35 },
@@ -711,6 +740,12 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '800',
     letterSpacing: 0.2,
+  },
+  ctaArrow: {
+    color: '#020617',
+    fontSize: 18,
+    fontWeight: '700',
+    marginTop: -1,
   },
   flash: {
     ...StyleSheet.absoluteFill,
@@ -739,6 +774,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
+  },
+  storyGlyph: {
+    color: '#22D3EE',
+    fontSize: 26,
+    fontWeight: '600',
   },
   storyTitle: {
     color: '#F8FAFC',

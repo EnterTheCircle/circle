@@ -1,8 +1,10 @@
 import { Stack } from 'expo-router';
+import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { Platform, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AppProvider, useApp } from '@/context/AppContext';
@@ -24,11 +26,11 @@ function ToastHost() {
   return <Toast message={toast} />;
 }
 
-function SplashController() {
+function SplashController({ fontsReady }: { fontsReady: boolean }) {
   const { onboardingReady } = useApp();
   useEffect(() => {
-    if (onboardingReady) SplashScreen.hideAsync();
-  }, [onboardingReady]);
+    if (onboardingReady && fontsReady) SplashScreen.hideAsync();
+  }, [onboardingReady, fontsReady]);
   return null;
 }
 
@@ -129,12 +131,20 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
+  const [fontsReady] = useFonts({
+    ...Ionicons.font,
+  });
+
+  if (!fontsReady) {
+    return <View style={{ flex: 1, backgroundColor: Colors.bg }} />;
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AppProvider>
         <View style={{ flex: 1, backgroundColor: Colors.bg }}>
           <StatusBar style="light" />
-          <SplashController />
+          <SplashController fontsReady={fontsReady} />
           <RootNavigator />
           <ToastHost />
         </View>

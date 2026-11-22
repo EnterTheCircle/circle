@@ -1,7 +1,6 @@
 import React from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { Radii } from '@/constants/theme';
 
 const AVATAR = require('../../assets/images/coin/avatar.jpg');
@@ -32,8 +31,14 @@ export function MarketingShell({
         </Pressable>
         <View style={styles.nav}>
           {LINKS.map((l) => (
-            <Pressable key={l.href} onPress={() => router.push(l.href as any)} style={styles.navItem}>
-              <Text style={styles.navTxt}>{l.label}</Text>
+            <Pressable
+              key={l.href}
+              onPress={() => router.push(l.href as any)}
+              style={[styles.navPill, l.label === '$CIRCLE' && styles.navPillAccent]}
+            >
+              <Text style={[styles.navTxt, l.label === '$CIRCLE' && styles.navTxtAccent]}>
+                {l.label}
+              </Text>
             </Pressable>
           ))}
           <Pressable style={styles.enterMini} onPress={() => router.push('/signup')}>
@@ -51,8 +56,7 @@ export function MarketingShell({
         <Text style={styles.title}>{title}</Text>
         {children}
         <Pressable style={styles.back} onPress={() => router.push('/signup')}>
-          <Ionicons name="arrow-back" size={16} color="#94A3B8" />
-          <Text style={styles.backTxt}>Back to home</Text>
+          <Text style={styles.backTxt}>← Back to home</Text>
         </Pressable>
       </ScrollView>
     </View>
@@ -95,16 +99,28 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 3,
   },
-  nav: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
-  navItem: { paddingHorizontal: 12, paddingVertical: 8 },
+  nav: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  navPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(226,232,240,0.14)',
+    backgroundColor: 'rgba(248,250,252,0.04)',
+  },
+  navPillAccent: {
+    borderColor: 'rgba(34,211,238,0.35)',
+    backgroundColor: 'rgba(34,211,238,0.08)',
+  },
   navTxt: {
     color: 'rgba(226,232,240,0.72)',
-    fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: 0.2,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.6,
   },
+  navTxtAccent: { color: '#67E8F9' },
   enterMini: {
-    marginLeft: 6,
+    marginLeft: 4,
     backgroundColor: 'rgba(248,250,252,0.92)',
     paddingHorizontal: 14,
     paddingVertical: 8,
