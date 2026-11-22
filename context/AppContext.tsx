@@ -18,6 +18,7 @@ import {
   SavedCategory,
   defaultAvatar,
   getPerson,
+  setCircleMode,
 } from '@/constants/mockData';
 import { getSession } from '@/lib/circleAuth';
 import { claimLiveWord, getIdentityId, normalizeWord } from '@/lib/identityCode';
@@ -92,6 +93,9 @@ type AppContextValue = {
   enterFromLanding: (account: AccountState) => Promise<void>;
   /** Clear session / onboarding (web sign out) */
   signOut: () => Promise<void>;
+  /** Public sample circle and tour, before an account exists. */
+  demoMode: boolean;
+  enterDemo: () => Promise<void>;
   updateAccount: (patch: Partial<AccountState>) => void;
   profile: ProfileState;
   updateProfile: (patch: Partial<ProfileState>) => void;
@@ -175,6 +179,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [connectAsks, setConnectAsks] = useState<ConnectAsk[]>([]);
   const [tourMode, setTourMode] = useState<'off' | 'welcome' | 'tour'>('off');
   const [tourStep, setTourStepState] = useState(0);
+  const [demoMode, setDemoMode] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -186,10 +191,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const parsed = JSON.parse(raw) as {
             hasSignedUp?: boolean;
             hasCompletedHowTo?: boolean;
+            demo?: boolean;
             account?: Partial<AccountState>;
           };
           setHasSignedUp(!!parsed.hasSignedUp);
           setHasCompletedHowTo(!!parsed.hasCompletedHowTo);
+          setDemoMode(!!parsed.demo);
+          setCircleMode(parsed.demo ? 'demo' : 'member');
           if (parsed.account) {
             setAccount({ ...DEFAULT_ACCOUNT, ...parsed.account });
           }
@@ -199,7 +207,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           setConnectAsks(JSON.parse(asksRaw) as ConnectAsk[]);
         }
         const guide = await AsyncStorage.getItem('circle.guide.v2');
-        if (!cancelled && !guide) setTourMode('welcome');
+        const onboarding = raw ? (JSON.parse(raw) as { demo?: boolean; hasSignedUp?: boolean }) : null;
+        if (!cancelled && !guide && onboarding?.hasSignedUp && !onboarding.demo) setTourMode('welcome');
         const profileRaw = await AsyncStorage.getItem(PROFILE_KEY);
         const session = await getSession();
         if (cancelled) return;
@@ -245,6 +254,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       hasSignedUp: boolean;
       hasCompletedHowTo: boolean;
       account: AccountState;
+      demo?: boolean;
     }) => {
       await AsyncStorage.setItem(ONBOARDING_KEY, JSON.stringify(next));
     },
@@ -295,23 +305,63 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setAccount(nextAccount);
       setHasSignedUp(true);
       setHasCompletedHowTo(true);
+      setDemoMode(false);
+      setCircleMode('member');
       await persistOnboarding({
         hasSignedUp: true,
         hasCompletedHowTo: true,
         account: nextAccount,
+        demo: false,
       });
     },
     [persistOnboarding]
   );
 
+  const enterDemo = useCallback(async () => {
+    const demoAccount: AccountState = {
+      ...DEFAULT_ACCOUNT,
+      contactChannel: 'email',
+      contactHandle: 'maya@circle.demo',
+    };
+    const demoProfile: ProfileState = {
+      name: 'Maya Chen',
+      location: 'New York',
+      profession: 'Founder',
+      bio: 'Sample circle. This is what Circle looks like before you add your own people.',
+      interests: ['Intros', 'Founders', 'New York'],
+      photo: defaultAvatar('maya-chen-demo'),
+      first10k: true,
+    };
+    setCircleMode('demo');
+    setDemoMode(true);
+    setAccount(demoAccount);
+    setProfile(demoProfile);
+    setHasSignedUp(true);
+    setHasCompletedHowTo(true);
+    setTourStepState(0);
+    setTourMode('tour');
+    await AsyncStorage.setItem(PROFILE_KEY, JSON.stringify(demoProfile));
+    await AsyncStorage.setItem('circle.guide.v2', 'done');
+    await persistOnboarding({
+      hasSignedUp: true,
+      hasCompletedHowTo: true,
+      account: demoAccount,
+      demo: true,
+    });
+  }, [persistOnboarding]);
+
   const signOut = useCallback(async () => {
     setHasSignedUp(false);
     setHasCompletedHowTo(false);
+    setDemoMode(false);
+    setCircleMode('member');
+    setTourMode('off');
     setAccount(DEFAULT_ACCOUNT);
     await persistOnboarding({
       hasSignedUp: false,
       hasCompletedHowTo: false,
       account: DEFAULT_ACCOUNT,
+      demo: false,
     });
     showToast('Signed out');
   }, [persistOnboarding, showToast]);
@@ -510,6 +560,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       completeHowTo,
       enterFromLanding,
       signOut,
+      demoMode,
+      enterDemo,
       updateAccount,
       profile,
       updateProfile,
@@ -552,6 +604,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       completeHowTo,
       enterFromLanding,
       signOut,
+      demoMode,
+      enterDemo,
       updateAccount,
       profile,
       updateProfile,

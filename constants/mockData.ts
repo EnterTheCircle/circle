@@ -116,7 +116,7 @@ export const FOUNDER: Person = {
   verified: true,
 };
 
-/** Live circle for the signed-in user (orbit + list). */
+/** Live circle for a signed-in member (orbit + list). */
 export const MY_CIRCLE: Person[] = [FOUNDER];
 
 export const PEOPLE: Person[] = [
@@ -396,6 +396,19 @@ export const PEOPLE: Person[] = [
     category: 'Hair & Beauty',
   },
 ];
+
+/** Sample circle shown before someone creates an account. */
+export const DEMO_CIRCLE: Person[] = PEOPLE.filter((p) => p.degree === 1);
+
+let circleMode: 'member' | 'demo' = 'member';
+
+export function setCircleMode(mode: 'member' | 'demo') {
+  circleMode = mode;
+}
+
+export function activeCircle(): Person[] {
+  return circleMode === 'demo' ? DEMO_CIRCLE : MY_CIRCLE;
+}
 
 export const DISCOVER_IDS = [
   'alex-morgan',
@@ -713,7 +726,7 @@ export function degreeLabel(degree: Degree): string {
 export function getNeighbors(personId: string): Person[] {
   if (personId === 'me') {
     // New members start with the Founder only — other seats are + invites.
-    return MY_CIRCLE.map(enrichPerson);
+    return activeCircle().map(enrichPerson);
   }
 
   const person = getPerson(personId);

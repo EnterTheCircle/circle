@@ -10,7 +10,7 @@ export const TOUR_STEPS = [
     route: '/',
     kicker: 'Circle',
     title: 'This is your orbit',
-    body: 'You sit in the center. The Founder is your first connection. Every other atom is a + for someone you add. Yours, Through, and 3rd are the rings.',
+    body: 'You are looking at Maya Chen’s sample circle, so the product is visible before you join. The center is the person. Rings are Yours, Through, and 3rd. Your own circle starts with the Founder and open seats.',
   },
   {
     id: 'discover' as const,

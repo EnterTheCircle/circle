@@ -68,7 +68,7 @@ const STORY_STEPS = [
  */
 export default function CoinHomePage() {
   const { width, height } = useWindowDimensions();
-  const { enterFromLanding, updateProfile, showToast } = useApp();
+  const { enterFromLanding, enterDemo, updateProfile, showToast } = useApp();
   const [phase, setPhase] = useState<Phase>('landing');
   const [storyIndex, setStoryIndex] = useState(0);
   const [authMode, setAuthMode] = useState<AuthMode>('signin');
@@ -575,6 +575,15 @@ export default function CoinHomePage() {
             <Text style={styles.ctaTxt}>Enter the circle</Text>
             <Text style={styles.ctaArrow}>→</Text>
           </Pressable>
+          <Pressable
+            onPress={async () => {
+              await enterDemo();
+              router.replace('/');
+            }}
+            style={styles.demoBtn}
+          >
+            <Text style={styles.demoTxt}>See a demo, no account</Text>
+          </Pressable>
         </View>
       </Animated.View>
 
@@ -786,7 +795,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
   navPillTxtAccent: { color: '#67E8F9' },
-  landingBottom: { alignItems: 'center' },
+  landingBottom: { alignItems: 'center', gap: 14 },
+  demoBtn: { paddingVertical: 8, paddingHorizontal: 12 },
+  demoTxt: { color: 'rgba(226,232,240,0.72)', fontSize: 14, fontWeight: '700' },
   brandEyebrow: {
     color: '#67E8F9',
     fontSize: 11,

@@ -10,8 +10,9 @@ import {
 } from '@/components/NetworkGlobe';
 import { Avatar, PrimaryButton } from '@/components/ui';
 import {
-  MY_CIRCLE,
   NETWORK_STATS,
+  PEOPLE,
+  activeCircle,
   Person,
   enrichPerson,
   getPerson,
@@ -34,7 +35,7 @@ function clampZoom(z: number) {
 
 export default function CircleWeb() {
   const router = useRouter();
-  const { unreadCount, isSaved, rememberPerson, requestIntro, profile, startTour } = useApp();
+  const { unreadCount, isSaved, rememberPerson, requestIntro, profile, startTour, demoMode } = useApp();
   const [filter, setFilter] = useState<DegreeFilter>('all');
   const [zoom, setZoom] = useState(WEB_ZOOM_FOR_DEGREE[3]);
   const [focusId, setFocusId] = useState('me');
@@ -83,10 +84,10 @@ export default function CircleWeb() {
 
   const people = useMemo(() => {
     const max = filterToMaxDegree(filter);
-    return MY_CIRCLE.map(enrichPerson)
+    return activeCircle().map(enrichPerson)
       .filter((p) => p.degree <= max)
       .sort((a, b) => a.degree - b.degree || a.name.localeCompare(b.name));
-  }, [filter]);
+  }, [filter, demoMode]);
 
   const focus = focusId === 'me' ? mePerson : getPerson(focusId);
 
@@ -95,11 +96,13 @@ export default function CircleWeb() {
       <View style={styles.topBar}>
         <View style={styles.statsRow}>
           <View style={styles.statChip}>
-            <Text style={styles.statNum}>{NETWORK_STATS.direct}</Text>
+            <Text style={styles.statNum}>{demoMode ? activeCircle().length : NETWORK_STATS.direct}</Text>
             <Text style={styles.statLbl}>direct</Text>
           </View>
           <View style={styles.statChip}>
-            <Text style={styles.statNum}>{NETWORK_STATS.extended}</Text>
+            <Text style={styles.statNum}>
+              {demoMode ? PEOPLE.filter((p) => p.degree >= 2).length : NETWORK_STATS.extended}
+            </Text>
             <Text style={styles.statLbl}>in reach</Text>
           </View>
         </View>

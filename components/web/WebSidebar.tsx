@@ -49,7 +49,7 @@ const NAV: {
 export function WebSidebar({ tourTarget }: { tourTarget?: 'circle' | 'discover' | 'add' | 'introductions' | 'profile' }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { pendingIntroCount, profile, unreadCount, signOut } = useApp();
+  const { pendingIntroCount, profile, unreadCount, signOut, demoMode } = useApp();
 
   const initials = initialsFromName(profile.name);
 
@@ -65,6 +65,11 @@ export function WebSidebar({ tourTarget }: { tourTarget?: 'circle' | 'discover' 
         <Logo size={28} compact />
       </Pressable>
       <Text style={styles.tagline}>Need someone? Ask your circle.</Text>
+      {demoMode ? (
+        <View style={styles.demoChip}>
+          <Text style={styles.demoChipTxt}>Sample circle · Maya Chen</Text>
+        </View>
+      ) : null}
 
       <View style={styles.marketRow}>
         <Pressable onPress={() => router.push('/about')} style={styles.marketPill}>
@@ -132,15 +137,27 @@ export function WebSidebar({ tourTarget }: { tourTarget?: 'circle' | 'discover' 
             {profile.name}
           </Text>
           <Text style={styles.userMeta}>
-            {unreadCount > 0 ? `${unreadCount} updates` : 'Your circle'}
+            {demoMode ? 'Demo account' : unreadCount > 0 ? `${unreadCount} updates` : 'Your circle'}
           </Text>
         </View>
       </Pressable>
 
-      <Pressable style={styles.signOut} onPress={onSignOut}>
-        <Glyph name="logout" size={15} color={Colors.textMuted} />
-        <Text style={styles.signOutTxt}>Sign out</Text>
-      </Pressable>
+      {demoMode ? (
+        <Pressable
+          style={styles.signOut}
+          onPress={async () => {
+            await signOut();
+            router.replace('/signup');
+          }}
+        >
+          <Text style={styles.signOutTxt}>Create your account</Text>
+        </Pressable>
+      ) : (
+        <Pressable style={styles.signOut} onPress={onSignOut}>
+          <Glyph name="logout" size={15} color={Colors.textMuted} />
+          <Text style={styles.signOutTxt}>Sign out</Text>
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -155,6 +172,17 @@ const styles = StyleSheet.create({
     paddingVertical: 22,
   },
   brandRow: { marginBottom: 2 },
+  demoChip: {
+    alignSelf: 'flex-start',
+    marginBottom: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(34,211,238,0.4)',
+    backgroundColor: 'rgba(34,211,238,0.08)',
+  },
+  demoChipTxt: { color: '#67E8F9', fontSize: 11, fontWeight: '800' },
   tagline: {
     color: Colors.textMuted,
     fontSize: 12,
