@@ -3,8 +3,8 @@ import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { Colors } from '@/constants/theme';
 
-/** Compact brand mark: glowing orbit + MyCircle */
-export function Logo({ size = 28 }: { size?: number }) {
+/** Compact brand mark: glowing orbit + MyCircle / Circle */
+export function Logo({ size = 28, compact = false }: { size?: number; compact?: boolean }) {
   const s = size;
   return (
     <View style={styles.row}>
@@ -22,9 +22,13 @@ export function Logo({ size = 28 }: { size?: number }) {
         <Circle cx="25" cy="11" r="2.2" fill="#22D3EE" opacity="0.95" />
         <Circle cx="8" cy="20" r="1.8" fill="#C4B5FD" opacity="0.9" />
       </Svg>
-      <Text style={styles.word}>
-        My<Text style={styles.accent}>Circle</Text>
-      </Text>
+      {compact ? (
+        <Text style={styles.wordCompact}>CIRCLE</Text>
+      ) : (
+        <Text style={styles.word}>
+          My<Text style={styles.accent}>Circle</Text>
+        </Text>
+      )}
     </View>
   );
 }
@@ -36,6 +40,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     letterSpacing: -0.3,
+  },
+  wordCompact: {
+    color: Colors.text,
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: 2.4,
   },
   accent: { color: '#C4B5FD', fontWeight: '700' },
 });

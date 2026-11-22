@@ -71,6 +71,8 @@ type AppContextValue = {
   completeHowTo: (accountOverride?: AccountState) => Promise<void>;
   /** Web marketing path: signup + skip how-to in one step */
   enterFromLanding: (account: AccountState) => Promise<void>;
+  /** Clear session / onboarding (web sign out) */
+  signOut: () => Promise<void>;
   updateAccount: (patch: Partial<AccountState>) => void;
   profile: ProfileState;
   updateProfile: (patch: Partial<ProfileState>) => void;
@@ -237,6 +239,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [persistOnboarding, showToast]
   );
 
+  const signOut = useCallback(async () => {
+    setHasSignedUp(false);
+    setHasCompletedHowTo(false);
+    setAccount(DEFAULT_ACCOUNT);
+    await persistOnboarding({
+      hasSignedUp: false,
+      hasCompletedHowTo: false,
+      account: DEFAULT_ACCOUNT,
+    });
+    showToast('Signed out');
+  }, [persistOnboarding, showToast]);
+
   const updateProfile = useCallback((patch: Partial<ProfileState>) => {
     setProfile((p) => ({ ...p, ...patch }));
   }, []);
@@ -349,6 +363,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       completeSignup,
       completeHowTo,
       enterFromLanding,
+      signOut,
       updateAccount,
       profile,
       updateProfile,
@@ -382,6 +397,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       completeSignup,
       completeHowTo,
       enterFromLanding,
+      signOut,
       updateAccount,
       profile,
       updateProfile,

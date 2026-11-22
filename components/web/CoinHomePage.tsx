@@ -15,12 +15,19 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { AccountState, useApp } from '@/context/AppContext';
 import { Radii } from '@/constants/theme';
+import {
+  requestPasswordReset,
+  resetPassword,
+  signIn,
+  signUp,
+} from '@/lib/circleAuth';
 
 const AVATAR = require('../../assets/images/coin/avatar.jpg');
 /** Native driver is flaky for multi-prop web animations — callbacks never fire. */
 const NATIVE = Platform.OS !== 'web';
 
 type Phase = 'landing' | 'story' | 'auth';
+type AuthMode = 'signin' | 'signup' | 'forgot' | 'reset';
 
 const NODES = [
   { angle: 12, r: 0.34, size: 11 },
@@ -64,8 +71,13 @@ export default function CoinHomePage() {
   const { enterFromLanding, updateProfile, showToast } = useApp();
   const [phase, setPhase] = useState<Phase>('landing');
   const [storyIndex, setStoryIndex] = useState(0);
-  const [username, setUsername] = useState('');
+  const [authMode, setAuthMode] = useState<AuthMode>('signin');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [resetToken, setResetToken] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [authInfo, setAuthInfo] = useState('');
   const [busy, setBusy] = useState(false);
   const entering = useRef(false);
 
@@ -163,29 +175,76 @@ export default function CoinHomePage() {
     else setPhase('auth');
   };
 
-  const dummyEnter = async () => {
-    if (username.trim().length < 2 || password.trim().length < 2 || busy) return;
-    setBusy(true);
+  const enterApp = async (displayName: string, handle: string) => {
     const account: AccountState = {
       phone: '',
       contactsPermission: 'undetermined',
-      contactChannel: 'imessage',
-      contactHandle: username.trim().toLowerCase(),
+      contactChannel: 'email',
+      contactHandle: handle,
     };
+    updateProfile({ name: displayName });
+    await enterFromLanding(account);
+    showToast(`Welcome, ${displayName.split(' ')[0]}`);
+    router.replace('/');
+    setTimeout(() => {
+      try {
+        router.replace('/(tabs)');
+      } catch {
+        /* ignore */
+      }
+    }, 50);
+  };
+
+  const submitAuth = async () => {
+    if (busy) return;
+    setAuthError('');
+    setAuthInfo('');
+    setBusy(true);
     try {
-      updateProfile({ name: username.trim() });
-      await enterFromLanding(account);
-      showToast(`Welcome, ${username.trim().split(' ')[0]}`);
-      // Stay under GitHub Pages base path (/circle)
-      router.replace('/');
-      // Fallback if replace is a no-op while Protected routes remount
-      setTimeout(() => {
-        try {
-          router.replace('/(tabs)');
-        } catch {
-          /* ignore */
+      if (authMode === 'signin') {
+        const res = await signIn({ email, password });
+        if (!res.ok) {
+          setAuthError(res.error);
+          return;
         }
-      }, 50);
+        await enterApp(res.session.name, res.session.email);
+        return;
+      }
+      if (authMode === 'signup') {
+        const res = await signUp({ email, password, name });
+        if (!res.ok) {
+          setAuthError(res.error);
+          return;
+        }
+        await enterApp(res.session.name, res.session.email);
+        return;
+      }
+      if (authMode === 'forgot') {
+        const res = await requestPasswordReset(email);
+        if (!res.ok) {
+          setAuthError(res.error);
+          return;
+        }
+        setAuthInfo(res.message);
+        if (res.demoToken) {
+          setResetToken(res.demoToken);
+          setAuthMode('reset');
+          setAuthInfo(
+            `${res.message} Demo mode: use the code below to set a new password (email delivery comes next).`
+          );
+        }
+        return;
+      }
+      if (authMode === 'reset') {
+        const res = await resetPassword({ token: resetToken.trim(), password });
+        if (!res.ok) {
+          setAuthError(res.error);
+          return;
+        }
+        setAuthInfo('Password updated. Sign in with your new password.');
+        setPassword('');
+        setAuthMode('signin');
+      }
     } finally {
       setBusy(false);
     }
@@ -224,43 +283,151 @@ export default function CoinHomePage() {
   }
 
   if (phase === 'auth') {
-    const can = username.trim().length >= 2 && password.trim().length >= 2 && !busy;
+    const title =
+      authMode === 'signin'
+        ? 'Sign in'
+        : authMode === 'signup'
+          ? 'Create account'
+          : authMode === 'forgot'
+            ? 'Forgot password'
+            : 'Reset password';
+    const cta =
+      authMode === 'signin'
+        ? 'Sign in'
+        : authMode === 'signup'
+          ? 'Create account'
+          : authMode === 'forgot'
+            ? 'Send reset link'
+            : 'Update password';
+
     return (
       <View style={styles.page}>
         <View style={styles.authCard}>
           <Image source={AVATAR} style={styles.authMark} />
           <Text style={styles.authBrand}>CIRCLE</Text>
-          <Text style={styles.authTitle}>Enter the circle</Text>
-          <Text style={styles.authSub}>Demo access — any username and password works.</Text>
-          <TextInput
-            value={username}
-            onChangeText={setUsername}
-            placeholder="Username"
-            placeholderTextColor="#64748B"
-            autoCapitalize="none"
-            style={styles.input}
-          />
-          <TextInput
-            value={password}
-            onChangeText={setPassword}
-            placeholder="Password"
-            placeholderTextColor="#64748B"
-            secureTextEntry
-            style={styles.input}
-            onSubmitEditing={dummyEnter}
-          />
+          <Text style={styles.authTitle}>{title}</Text>
+          <Text style={styles.authSub}>
+            {authMode === 'forgot'
+              ? 'Enter your email and we’ll help you get back in.'
+              : authMode === 'reset'
+                ? 'Choose a new password for your account.'
+                : 'Warm intros through people you already trust.'}
+          </Text>
+
+          {authMode === 'signin' || authMode === 'signup' ? (
+            <View style={styles.authTabs}>
+              <Pressable
+                onPress={() => {
+                  setAuthMode('signin');
+                  setAuthError('');
+                }}
+                style={[styles.authTab, authMode === 'signin' && styles.authTabOn]}
+              >
+                <Text style={[styles.authTabTxt, authMode === 'signin' && styles.authTabTxtOn]}>
+                  Sign in
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  setAuthMode('signup');
+                  setAuthError('');
+                }}
+                style={[styles.authTab, authMode === 'signup' && styles.authTabOn]}
+              >
+                <Text style={[styles.authTabTxt, authMode === 'signup' && styles.authTabTxtOn]}>
+                  Sign up
+                </Text>
+              </Pressable>
+            </View>
+          ) : null}
+
+          {authMode === 'signup' ? (
+            <TextInput
+              value={name}
+              onChangeText={setName}
+              placeholder="Full name"
+              placeholderTextColor="#64748B"
+              autoCapitalize="words"
+              style={styles.input}
+            />
+          ) : null}
+
+          {authMode !== 'reset' ? (
+            <TextInput
+              value={email}
+              onChangeText={setEmail}
+              placeholder="Email"
+              placeholderTextColor="#64748B"
+              autoCapitalize="none"
+              keyboardType="email-address"
+              style={styles.input}
+            />
+          ) : null}
+
+          {authMode === 'reset' ? (
+            <TextInput
+              value={resetToken}
+              onChangeText={setResetToken}
+              placeholder="Reset code"
+              placeholderTextColor="#64748B"
+              autoCapitalize="none"
+              style={styles.input}
+            />
+          ) : null}
+
+          {authMode !== 'forgot' ? (
+            <TextInput
+              value={password}
+              onChangeText={setPassword}
+              placeholder={authMode === 'reset' ? 'New password' : 'Password'}
+              placeholderTextColor="#64748B"
+              secureTextEntry
+              style={styles.input}
+              onSubmitEditing={submitAuth}
+            />
+          ) : null}
+
+          {authError ? <Text style={styles.authError}>{authError}</Text> : null}
+          {authInfo ? <Text style={styles.authInfo}>{authInfo}</Text> : null}
+
           <Pressable
-            onPress={dummyEnter}
-            disabled={!can}
+            onPress={submitAuth}
+            disabled={busy}
             style={({ pressed }) => [
               styles.cta,
               styles.ctaFull,
-              !can && styles.ctaDisabled,
-              pressed && can && styles.ctaPressed,
+              busy && styles.ctaDisabled,
+              pressed && !busy && styles.ctaPressed,
             ]}
           >
-            <Text style={styles.ctaTxt}>{busy ? 'Entering…' : 'Enter'}</Text>
+            <Text style={styles.ctaTxt}>{busy ? 'Please wait…' : cta}</Text>
           </Pressable>
+
+          {authMode === 'signin' ? (
+            <Pressable
+              onPress={() => {
+                setAuthMode('forgot');
+                setAuthError('');
+                setAuthInfo('');
+              }}
+              style={styles.linkBtn}
+            >
+              <Text style={styles.linkTxt}>Forgot password?</Text>
+            </Pressable>
+          ) : null}
+
+          {authMode === 'forgot' || authMode === 'reset' ? (
+            <Pressable
+              onPress={() => {
+                setAuthMode('signin');
+                setAuthError('');
+                setAuthInfo('');
+              }}
+              style={styles.linkBtn}
+            >
+              <Text style={styles.linkTxt}>Back to sign in</Text>
+            </Pressable>
+          ) : null}
         </View>
       </View>
     );
@@ -592,6 +759,26 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 8,
   },
+  authTabs: {
+    flexDirection: 'row',
+    alignSelf: 'stretch',
+    gap: 8,
+    marginBottom: 4,
+  },
+  authTab: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: Radii.md,
+    borderWidth: 1,
+    borderColor: 'rgba(148,163,184,0.2)',
+    alignItems: 'center',
+  },
+  authTabOn: {
+    borderColor: 'rgba(34,211,238,0.45)',
+    backgroundColor: 'rgba(34,211,238,0.1)',
+  },
+  authTabTxt: { color: '#64748B', fontWeight: '700', fontSize: 13 },
+  authTabTxtOn: { color: '#22D3EE' },
   input: {
     alignSelf: 'stretch',
     backgroundColor: 'rgba(2,6,23,0.9)',
@@ -603,4 +790,18 @@ const styles = StyleSheet.create({
     color: '#F8FAFC',
     fontSize: 16,
   },
+  authError: {
+    alignSelf: 'stretch',
+    color: '#F87171',
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  authInfo: {
+    alignSelf: 'stretch',
+    color: '#67E8F9',
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  linkBtn: { marginTop: 4, paddingVertical: 6 },
+  linkTxt: { color: '#94A3B8', fontSize: 13, fontWeight: '600' },
 });

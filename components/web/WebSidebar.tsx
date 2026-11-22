@@ -7,6 +7,7 @@ import { Avatar } from '@/components/ui';
 import { ME } from '@/constants/mockData';
 import { Colors, Radii } from '@/constants/theme';
 import { useApp } from '@/context/AppContext';
+import { signOut as authSignOut } from '@/lib/circleAuth';
 
 const NAV: {
   href: string;
@@ -48,12 +49,25 @@ const NAV: {
 export function WebSidebar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { pendingIntroCount, profile, unreadCount } = useApp();
+  const { pendingIntroCount, profile, unreadCount, signOut } = useApp();
+
+  const initials = profile.name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || 'YO';
+
+  const onSignOut = async () => {
+    await authSignOut();
+    await signOut();
+    router.replace('/signup');
+  };
 
   return (
     <View style={styles.rail}>
-      <Pressable onPress={() => router.push('/')}>
-        <Logo size={30} />
+      <Pressable onPress={() => router.push('/')} style={styles.brandRow}>
+        <Logo size={28} compact />
       </Pressable>
       <Text style={styles.tagline}>Need someone? Ask your circle.</Text>
 
@@ -71,11 +85,13 @@ export function WebSidebar() {
                 active && styles.itemActive,
               ]}
             >
-              <Ionicons
-                name={item.icon}
-                size={18}
-                color={active ? Colors.accent : Colors.textMuted}
-              />
+              <View style={[styles.iconWrap, active && styles.iconWrapActive]}>
+                <Ionicons
+                  name={item.icon}
+                  size={17}
+                  color={active ? '#C4B5FD' : Colors.textMuted}
+                />
+              </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.itemLabel, active && styles.itemLabelActive]}>{item.label}</Text>
                 <Text style={styles.itemHint}>{item.hint}</Text>
@@ -98,8 +114,8 @@ export function WebSidebar() {
       </Pressable>
 
       <Pressable style={styles.user} onPress={() => router.push('/profile')}>
-        <Avatar initials="SK" photo={ME.photo} color={Colors.accent} size={36} />
-        <View style={{ flex: 1 }}>
+        <Avatar initials={initials} photo={ME.photo} color={Colors.accent} size={36} />
+        <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={styles.userName} numberOfLines={1}>
             {profile.name}
           </Text>
@@ -108,41 +124,57 @@ export function WebSidebar() {
           </Text>
         </View>
       </Pressable>
+
+      <Pressable style={styles.signOut} onPress={onSignOut}>
+        <Ionicons name="log-out-outline" size={15} color={Colors.textMuted} />
+        <Text style={styles.signOutTxt}>Sign out</Text>
+      </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   rail: {
-    width: 248,
-    backgroundColor: '#08080F',
+    width: 260,
+    backgroundColor: '#07070D',
     borderRightWidth: 1,
-    borderRightColor: Colors.border,
+    borderRightColor: 'rgba(167,139,250,0.14)',
     paddingHorizontal: 16,
     paddingVertical: 22,
   },
+  brandRow: { marginBottom: 2 },
   tagline: {
     color: Colors.textMuted,
     fontSize: 12,
     marginTop: 10,
-    marginBottom: 22,
+    marginBottom: 24,
     lineHeight: 17,
   },
-  nav: { gap: 4 },
+  nav: { gap: 6 },
   item: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    paddingVertical: 10,
+    paddingVertical: 11,
     paddingHorizontal: 10,
     borderRadius: Radii.md,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   itemHover: { backgroundColor: 'rgba(255,255,255,0.04)' },
   itemActive: {
-    backgroundColor: Colors.accentSoft,
-    borderWidth: 1,
-    borderColor: 'rgba(167,139,250,0.28)',
+    backgroundColor: 'rgba(139,92,246,0.14)',
+    borderColor: 'rgba(167,139,250,0.35)',
   },
+  iconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+  },
+  iconWrapActive: { backgroundColor: 'rgba(167,139,250,0.18)' },
   itemLabel: { color: Colors.textSecondary, fontSize: 14, fontWeight: '700' },
   itemLabelActive: { color: Colors.text },
   itemHint: { color: Colors.textMuted, fontSize: 11, marginTop: 1 },
@@ -163,8 +195,11 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: Colors.accentStrong,
     borderRadius: Radii.md,
-    paddingVertical: 12,
-    marginBottom: 16,
+    paddingVertical: 13,
+    marginBottom: 14,
+    shadowColor: '#8B5CF6',
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
   },
   connectText: { color: '#fff', fontWeight: '700', fontSize: 14 },
   user: {
@@ -177,4 +212,13 @@ const styles = StyleSheet.create({
   },
   userName: { color: Colors.text, fontWeight: '700', fontSize: 13 },
   userMeta: { color: Colors.textMuted, fontSize: 11, marginTop: 2 },
+  signOut: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  signOutTxt: { color: Colors.textMuted, fontSize: 12, fontWeight: '600' },
 });
