@@ -10,6 +10,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AppProvider, useApp } from '@/context/AppContext';
 import { Toast } from '@/components/ui';
 import { WebSidebar } from '@/components/web/WebSidebar';
+import { TourHost } from '@/components/web/TourHost';
 import { Colors } from '@/constants/theme';
 
 export { ErrorBoundary } from 'expo-router';
@@ -53,6 +54,7 @@ function AppStack() {
       <Stack.Screen name="about" options={{ headerShown: false }} />
       <Stack.Screen name="tokenomics" options={{ headerShown: false }} />
       <Stack.Screen name="circle-token" options={{ headerShown: false }} />
+      <Stack.Screen name="join/[code]" options={{ headerShown: false }} />
 
       <Stack.Protected guard={!hasSignedUp}>
         <Stack.Screen name="signup" options={{ headerShown: false }} />
@@ -109,7 +111,7 @@ function AppStack() {
 }
 
 function RootNavigator() {
-  const { onboardingReady, hasSignedUp, hasCompletedHowTo } = useApp();
+  const { onboardingReady, hasSignedUp, hasCompletedHowTo, tourMode, tourStep } = useApp();
 
   if (!onboardingReady) {
     return <View style={{ flex: 1, backgroundColor: Colors.bg }} />;
@@ -118,12 +120,14 @@ function RootNavigator() {
   const showSidebar = Platform.OS === 'web' && hasSignedUp && hasCompletedHowTo;
 
   if (showSidebar) {
+    const target = tourMode === 'tour' ? (['circle', 'discover', 'add', 'introductions', 'profile'] as const)[tourStep] : undefined;
     return (
       <View style={{ flex: 1, flexDirection: 'row', backgroundColor: Colors.bg }}>
-        <WebSidebar />
+        <WebSidebar tourTarget={target} />
         <View style={{ flex: 1, minWidth: 0 }}>
           <AppStack />
         </View>
+        <TourHost />
       </View>
     );
   }

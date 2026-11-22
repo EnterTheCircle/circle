@@ -181,7 +181,7 @@ export default function CoinHomePage() {
       contactHandle: handle,
     };
     updateProfile({ name: displayName, photo: defaultAvatar(displayName) });
-    await AsyncStorage.removeItem('circle.guide.v1');
+    await AsyncStorage.removeItem('circle.guide.v2');
     await enterFromLanding(account);
     router.replace('/');
     setTimeout(() => {

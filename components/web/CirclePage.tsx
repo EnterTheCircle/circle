@@ -1,9 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { LayoutChangeEvent, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Glyph } from '@/components/Glyph';
-import { TourOverlay, WelcomeOverlay } from '@/components/web/CircleGuide';
 import {
   DegreeFilter,
   NetworkGlobe,
@@ -36,25 +34,12 @@ function clampZoom(z: number) {
 
 export default function CircleWeb() {
   const router = useRouter();
-  const { unreadCount, isSaved, rememberPerson, requestIntro, profile } = useApp();
+  const { unreadCount, isSaved, rememberPerson, requestIntro, profile, startTour } = useApp();
   const [filter, setFilter] = useState<DegreeFilter>('all');
   const [zoom, setZoom] = useState(WEB_ZOOM_FOR_DEGREE[3]);
   const [focusId, setFocusId] = useState('me');
   const [preview, setPreview] = useState<Person | null>(null);
   const [globeSize, setGlobeSize] = useState(720);
-  const [guide, setGuide] = useState<'welcome' | 'tour' | null>(null);
-  const [tourStep, setTourStep] = useState(0);
-
-  useEffect(() => {
-    AsyncStorage.getItem('circle.guide.v1').then((v) => {
-      if (!v) setGuide('welcome');
-    });
-  }, []);
-
-  const dismissGuide = () => {
-    setGuide(null);
-    void AsyncStorage.setItem('circle.guide.v1', 'done');
-  };
 
   const maxDegree = filterToMaxDegree(filter);
   const handleZoomChange = useCallback((next: number) => setZoom(next), []);
@@ -185,10 +170,7 @@ export default function CircleWeb() {
               </Pressable>
               <Pressable
                 style={styles.toolBtn}
-                onPress={() => {
-                  setTourStep(0);
-                  setGuide('tour');
-                }}
+                onPress={startTour}
               >
                 <Text style={styles.toolTxt}>Tour</Text>
               </Pressable>
@@ -335,24 +317,6 @@ export default function CircleWeb() {
           )}
         </View>
       </View>
-      {guide === 'welcome' ? (
-        <WelcomeOverlay
-          name={mePerson.firstName}
-          onTour={() => {
-            setTourStep(0);
-            setGuide('tour');
-          }}
-          onSkip={dismissGuide}
-        />
-      ) : null}
-      {guide === 'tour' ? (
-        <TourOverlay
-          step={tourStep}
-          onBack={() => setTourStep((s) => Math.max(0, s - 1))}
-          onNext={() => setTourStep((s) => Math.min(4, s + 1))}
-          onClose={dismissGuide}
-        />
-      ) : null}
     </View>
   );
 }

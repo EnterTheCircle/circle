@@ -20,9 +20,21 @@ import {
   getPerson,
 } from '@/constants/mockData';
 import { getSession } from '@/lib/circleAuth';
+import { claimLiveWord, getIdentityId, normalizeWord } from '@/lib/identityCode';
 
 const ONBOARDING_KEY = 'mycircle.onboarding.v1';
 const PROFILE_KEY = 'mycircle.profile.v1';
+const ASKS_KEY = 'circle.connect.asks.v1';
+
+export type ConnectAsk = {
+  id: string;
+  fromName: string;
+  fromWord: string;
+  toWord: string;
+  kind: 'word' | 'link';
+  status: 'pending' | 'connected';
+  createdAt: number;
+};
 
 export type ContactsPermissionState = 'undetermined' | 'granted' | 'denied';
 
@@ -101,6 +113,17 @@ type AppContextValue = {
   togglePrivacy: (key: keyof PrivacySettings) => void;
   recentConnections: string[];
   addConnection: (personId: string) => void;
+  connectAsks: ConnectAsk[];
+  sendConnectAsk: (
+    toWord: string,
+    kind?: 'word' | 'link'
+  ) => Promise<{ ok: true; fromWord: string } | { ok: false; error: string }>;
+  confirmConnectAsk: (id: string, senderWord: string) => boolean;
+  tourMode: 'off' | 'welcome' | 'tour';
+  tourStep: number;
+  startTour: () => void;
+  dismissTour: () => void;
+  setTourStep: (step: number) => void;
   toast: string | null;
   showToast: (message: string) => void;
   clearToast: () => void;
@@ -149,6 +172,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   });
   const [recentConnections, setRecentConnections] = useState<string[]>([]);
   const [toast, setToast] = useState<string | null>(null);
+  const [connectAsks, setConnectAsks] = useState<ConnectAsk[]>([]);
+  const [tourMode, setTourMode] = useState<'off' | 'welcome' | 'tour'>('off');
+  const [tourStep, setTourStepState] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -168,6 +194,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             setAccount({ ...DEFAULT_ACCOUNT, ...parsed.account });
           }
         }
+        const asksRaw = await AsyncStorage.getItem(ASKS_KEY);
+        if (!cancelled && asksRaw) {
+          setConnectAsks(JSON.parse(asksRaw) as ConnectAsk[]);
+        }
+        const guide = await AsyncStorage.getItem('circle.guide.v2');
+        if (!cancelled && !guide) setTourMode('welcome');
         const profileRaw = await AsyncStorage.getItem(PROFILE_KEY);
         const session = await getSession();
         if (cancelled) return;
@@ -384,6 +416,80 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [showToast]
   );
 
+  const sendConnectAsk = useCallback(
+    async (toWord: string, kind: 'word' | 'link' = 'word') => {
+      const target = normalizeWord(kind === 'link' ? toWord.replace(/-/g, ' ') : toWord);
+      if (!target || !target.includes(' ')) {
+        return { ok: false as const, error: 'Enter their two-word identifier.' };
+      }
+      const userId = await getIdentityId();
+      const mine = await claimLiveWord(userId);
+      if (normalizeWord(mine.word) === target) {
+        return { ok: false as const, error: 'That is your word. Ask them for theirs.' };
+      }
+      const ask: ConnectAsk = {
+        id: `ask-${Date.now()}`,
+        fromName: profile.name?.trim() || 'You',
+        fromWord: mine.word,
+        toWord: target,
+        kind,
+        status: 'pending',
+        createdAt: Date.now(),
+      };
+      setConnectAsks((prev) => {
+        const next = [ask, ...prev].slice(0, 40);
+        void AsyncStorage.setItem(ASKS_KEY, JSON.stringify(next));
+        return next;
+      });
+      setNotifications((prev) => [
+        {
+          id: `note-${ask.id}`,
+          title: 'Connection request',
+          body: `${ask.fromName} wants to connect. Open Add and enter the word they read you.`,
+          time: 'Just now',
+          unread: true,
+          action: 'connect',
+          askId: ask.id,
+        },
+        ...prev,
+      ]);
+      showToast('Request sent. They confirm with your word.');
+      return { ok: true as const, fromWord: mine.word };
+    },
+    [profile.name, showToast]
+  );
+
+  const confirmConnectAsk = useCallback(
+    (id: string, senderWord: string) => {
+      const typed = normalizeWord(senderWord);
+      const ask = connectAsks.find((a) => a.id === id && a.status === 'pending');
+      if (!ask || typed !== normalizeWord(ask.fromWord)) return false;
+      const next = connectAsks.map((a) =>
+        a.id === id ? { ...a, status: 'connected' as const } : a
+      );
+      setConnectAsks(next);
+      void AsyncStorage.setItem(ASKS_KEY, JSON.stringify(next));
+      showToast(`Connected with ${ask.fromName}`);
+      return true;
+    },
+    [connectAsks, showToast]
+  );
+
+  const startTour = useCallback(() => {
+    setTourStepState(0);
+    setTourMode('tour');
+  }, []);
+
+  const dismissTour = useCallback(() => {
+    setTourMode('off');
+    void AsyncStorage.setItem('circle.guide.v2', 'done');
+  }, []);
+
+  const setTourStep = useCallback((step: number) => {
+    setTourStepState(step);
+    setTourMode('tour');
+  }, []);
+
   const unreadCount = useMemo(
     () => notifications.filter((n) => n.unread).length,
     [notifications]
@@ -425,6 +531,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       togglePrivacy,
       recentConnections,
       addConnection,
+      connectAsks,
+      sendConnectAsk,
+      confirmConnectAsk,
+      tourMode,
+      tourStep,
+      startTour,
+      dismissTour,
+      setTourStep,
       toast,
       showToast,
       clearToast,
@@ -459,6 +573,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       togglePrivacy,
       recentConnections,
       addConnection,
+      connectAsks,
+      sendConnectAsk,
+      confirmConnectAsk,
+      tourMode,
+      tourStep,
+      startTour,
+      dismissTour,
+      setTourStep,
       toast,
       showToast,
       clearToast,

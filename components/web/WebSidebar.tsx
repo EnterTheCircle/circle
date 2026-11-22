@@ -46,7 +46,7 @@ const NAV: {
   },
 ];
 
-export function WebSidebar() {
+export function WebSidebar({ tourTarget }: { tourTarget?: 'circle' | 'discover' | 'add' | 'introductions' | 'profile' }) {
   const router = useRouter();
   const pathname = usePathname();
   const { pendingIntroCount, profile, unreadCount, signOut } = useApp();
@@ -93,6 +93,9 @@ export function WebSidebar() {
                 styles.item,
                 pressed && styles.itemHover,
                 active && styles.itemActive,
+                tourTarget === item.label.toLowerCase() && styles.tourOn,
+                item.label === 'Circle' && tourTarget === 'circle' && styles.tourOn,
+                item.label === 'Introductions' && tourTarget === 'introductions' && styles.tourOn,
               ]}
             >
               <View style={[styles.iconWrap, active && styles.iconWrapActive]}>
@@ -114,7 +117,10 @@ export function WebSidebar() {
 
       <View style={{ flex: 1 }} />
 
-      <Pressable style={styles.connect} onPress={() => router.push('/connect')}>
+      <Pressable
+        style={[styles.connect, tourTarget === 'add' && styles.tourOn]}
+        onPress={() => router.push('/connect')}
+      >
         <Glyph name="plus" size={16} color="#fff" />
         <Text style={styles.connectText}>Connect</Text>
       </Pressable>
@@ -197,6 +203,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(139,92,246,0.14)',
     borderColor: 'rgba(167,139,250,0.35)',
   },
+  tourOn: {
+    borderColor: '#67E8F9',
+    backgroundColor: 'rgba(34,211,238,0.14)',
+  },
   iconWrap: {
     width: 32,
     height: 32,
@@ -226,6 +236,8 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: Colors.accentStrong,
     borderRadius: Radii.md,
+    borderWidth: 1,
+    borderColor: 'transparent',
     paddingVertical: 13,
     marginBottom: 14,
     shadowColor: '#8B5CF6',

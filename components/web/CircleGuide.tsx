@@ -4,34 +4,46 @@ import { Colors, Radii } from '@/constants/theme';
 
 const NATIVE = Platform.OS !== 'web';
 
-const STEPS = [
+export const TOUR_STEPS = [
   {
-    kicker: 'The center',
-    title: 'You are the nucleus',
-    body: 'Your photo sits in the middle of the orbit. The First 10k mark means you joined early. Tap yourself to open your profile and swap the generated photo.',
+    id: 'circle' as const,
+    route: '/',
+    kicker: 'Circle',
+    title: 'This is your orbit',
+    body: 'You sit in the center. The Founder is your first connection. Every other atom is a + for someone you add. Yours, Through, and 3rd are the rings.',
   },
   {
-    kicker: 'Open seats',
-    title: 'Every + is someone you can add',
-    body: 'The only person already on your orbit is the Founder of the app. Every other atom is an empty seat. Tap + to invite someone you actually know.',
-  },
-  {
-    kicker: 'The rings',
-    title: 'Yours, through, and further',
-    body: 'Yours is people you know directly. Through is their people — your 2nd circle. 3rd is one more hop. Use the filters under the orbit to focus a ring.',
-  },
-  {
-    kicker: 'Search',
-    title: 'Ask for a lawyer, not a cold DM',
-    body: 'Open Discover and type a role — lawyer, stylist, founder. Circle only looks inside your 1st and 2nd. When you find someone, you ask the mutual between you for a warm intro.',
+    id: 'discover' as const,
+    route: '/discover',
+    kicker: 'Discover',
+    title: 'Search who you need',
+    body: 'Type a role — lawyer, stylist, founder. Circle looks through your 1st and 2nd, then you ask the mutual for a warm intro.',
     example: 'Try “lawyer”',
   },
   {
+    id: 'add' as const,
+    route: '/connect',
+    kicker: 'Add',
+    title: 'Your word adds people',
+    body: 'Your identifier changes every 30 seconds. They type it to request you. You type theirs to connect. The daily link does the same, and it changes every day. Tap to add is phone only.',
+  },
+  {
+    id: 'introductions' as const,
+    route: '/introductions',
     kicker: 'Introductions',
-    title: 'Warm asks land here',
-    body: 'When someone wants to meet through you, it shows up in Introductions. You approve, and the note goes out in the app they already use.',
+    title: 'Warm asks live here',
+    body: 'You are already connected with the Founder through Circle. New asks from your circle show up here for you to approve.',
+  },
+  {
+    id: 'profile' as const,
+    route: '/profile',
+    kicker: 'Profile',
+    title: 'Change your photo',
+    body: 'Profile holds your name, First 10k badge, and photo. Tap the picture to upload your own, or reset to the generated one.',
   },
 ];
+
+const STEPS = TOUR_STEPS;
 
 export function WelcomeOverlay({
   name,
@@ -110,7 +122,7 @@ export function TourOverlay({
   }, [step, fade]);
 
   return (
-    <View style={styles.tourScrim} pointerEvents="box-none">
+    <View pointerEvents="box-none">
       <Animated.View style={[styles.tourCard, { opacity: fade }]}>
         <View style={styles.tourTop}>
           <Text style={styles.stepCount}>

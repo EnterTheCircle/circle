@@ -82,6 +82,8 @@ export type AppNotification = {
   time: string;
   personId?: string;
   unread: boolean;
+  action?: 'connect';
+  askId?: string;
 };
 
 export const ME: Person = {

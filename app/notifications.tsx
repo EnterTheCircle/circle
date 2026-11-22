@@ -44,6 +44,9 @@ export default function NotificationsScreen() {
                 <Text style={styles.time}>{n.time}</Text>
               </View>
             </View>
+            {n.action === 'connect' ? (
+              <PrimaryButton title="Open Add" onPress={() => router.push('/connect')} />
+            ) : null}
             <View style={styles.actions}>
               {n.personId ? (
                 <>

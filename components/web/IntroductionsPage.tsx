@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Avatar, PrimaryButton } from '@/components/ui';
 import {
+  FOUNDER,
   ME,
   buildBridgeIntroMessage,
   channelLabel,
@@ -54,6 +55,17 @@ export default function IntroductionsWeb() {
       <Text style={styles.kicker}>Warm handoffs</Text>
       <Text style={styles.title}>Introductions</Text>
       <Text style={styles.sub}>Approve in MyCircle. Messaging happens in their preferred app.</Text>
+
+      <View style={styles.founder}>
+        <Avatar initials={FOUNDER.initials} photo={FOUNDER.photo} color={FOUNDER.color} size={52} />
+        <View style={{ flex: 1 }}>
+          <Text style={styles.cardTitle}>Founder of the app</Text>
+          <Text style={styles.mutual}>Connected with Founder through Circle.</Text>
+        </View>
+        <View style={[styles.status, { borderColor: Colors.success + '66' }]}>
+          <Text style={[styles.statusText, { color: Colors.success }]}>CONNECTED</Text>
+        </View>
+      </View>
 
       <View style={styles.tabs}>
         {(['received', 'sent'] as const).map((t) => (
@@ -145,6 +157,18 @@ const styles = StyleSheet.create({
   kicker: { color: Colors.accent, fontSize: 12, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' },
   title: { color: Colors.text, fontSize: 36, fontWeight: '800', marginTop: 6, letterSpacing: -0.8 },
   sub: { color: Colors.textMuted, marginTop: 8, fontSize: 15, marginBottom: 20 },
+  founder: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    maxWidth: 640,
+    backgroundColor: 'rgba(167,139,250,0.1)',
+    borderRadius: Radii.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(167,139,250,0.35)',
+    padding: 16,
+    marginBottom: 18,
+  },
   tabs: {
     flexDirection: 'row',
     alignSelf: 'flex-start',

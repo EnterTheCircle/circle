@@ -1,74 +1,207 @@
-import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Glyph } from '@/components/Glyph';
 import { PrimaryButton } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
-
-const OPTIONS = [
-  {
-    key: 'code',
-    icon: 'keypad' as const,
-    title: 'ADD CODE',
-    description:
-      'Your code refreshes every 15 seconds. When someone sends it, you have 15 seconds to accept.',
-    button: 'Open add code',
-    route: '/connect-keyword' as const,
-    accent: Colors.accent,
-  },
-  {
-    key: 'tap',
-    icon: 'wifi' as const,
-    title: 'TAP TO CONNECT',
-    description: 'Connect with someone standing right next to you — simulated proximity.',
-    button: 'Find nearby people',
-    route: '/connect-nearby' as const,
-    accent: Colors.cyan,
-  },
-];
+import { useApp } from '@/context/AppContext';
+import {
+  claimDailySlug,
+  claimLiveWord,
+  getIdentityId,
+  joinUrl,
+  secondsLeft,
+} from '@/lib/identityCode';
 
 export default function ConnectScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { showToast, sendConnectAsk, confirmConnectAsk, connectAsks, profile } = useApp();
+  const web = Platform.OS === 'web';
+
+  const [word, setWord] = useState('…');
+  const [left, setLeft] = useState(30);
+  const [theirWord, setTheirWord] = useState('');
+  const [confirmWord, setConfirmWord] = useState<Record<string, string>>({});
+  const [link, setLink] = useState('');
+  const [sentNote, setSentNote] = useState('');
+
+  useEffect(() => {
+    let stop = false;
+    const tick = async () => {
+      const id = await getIdentityId();
+      const live = await claimLiveWord(id);
+      const daily = await claimDailySlug(id);
+      if (stop) return;
+      setWord(live.word);
+      setLeft(secondsLeft());
+      setLink(joinUrl(daily.slug));
+    };
+    void tick();
+    const timer = setInterval(() => void tick(), 1000);
+    return () => {
+      stop = true;
+      clearInterval(timer);
+    };
+  }, []);
+
+  const pending = connectAsks.filter((a) => a.status === 'pending');
+  const mine = profile.name?.trim() || 'You';
+
+  const send = async () => {
+    const res = await sendConnectAsk(theirWord, 'word');
+    if (!res.ok) {
+      showToast(res.error);
+      return;
+    }
+    setSentNote(`Read them this word: ${res.fromWord}`);
+    setTheirWord('');
+  };
+
+  const copyLink = async () => {
+    try {
+      if (web && typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(link);
+        showToast('Link copied');
+        return;
+      }
+    } catch {
+      /* fall through */
+    }
+    showToast(link);
+  };
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 }]}>
-      <View style={styles.handle} />
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={{
+        paddingTop: insets.top + 18,
+        paddingBottom: insets.bottom + 28,
+        paddingHorizontal: web ? 28 : Spacing.lg,
+      }}
+    >
       <Pressable style={styles.close} onPress={() => router.back()}>
-        <Ionicons name="close" size={22} color={Colors.textSecondary} />
+        <Glyph name="close" size={18} color={Colors.textSecondary} />
       </Pressable>
+      <Text style={styles.kicker}>Add</Text>
+      <Text style={styles.title}>Your word is your identifier.</Text>
+      <Text style={styles.subtitle}>
+        It changes every 30 seconds. No two people hold the same word at the same time. They type yours to request you. You type theirs to connect.
+      </Text>
 
-      <Text style={styles.title}>Add someone.</Text>
-      <Text style={styles.subtitle}>Only two ways in — a live code, or a real-life tap.</Text>
-
-      {OPTIONS.map((opt) => (
-        <View key={opt.key} style={styles.card}>
-          <View style={[styles.iconWrap, { backgroundColor: opt.accent + '22' }]}>
-            <Ionicons name={opt.icon} size={22} color={opt.accent} />
-          </View>
-          <Text style={styles.cardTitle}>{opt.title}</Text>
-          <Text style={styles.cardDesc}>{opt.description}</Text>
-          <PrimaryButton title={opt.button} onPress={() => router.push(opt.route)} />
+      <View style={styles.wordCard}>
+        <Text style={styles.wordLabel}>Showing now</Text>
+        <Text style={styles.word}>{word}</Text>
+        <View style={styles.track}>
+          <View style={[styles.fill, { width: `${(left / 30) * 100}%` }]} />
         </View>
-      ))}
-    </View>
+        <Text style={styles.countdown}>New word in {left}s</Text>
+      </View>
+
+      <View style={web ? styles.columns : undefined}>
+        <View style={[styles.card, web && styles.col]}>
+          <Text style={styles.cardTitle}>Request someone</Text>
+          <Text style={styles.cardDesc}>Type the word on their screen. The request lands in their notifications.</Text>
+          <TextInput
+            value={theirWord}
+            onChangeText={setTheirWord}
+            placeholder="their word"
+            placeholderTextColor={Colors.textMuted}
+            autoCapitalize="none"
+            style={styles.input}
+          />
+          <PrimaryButton title="Send request" onPress={() => void send()} />
+          {sentNote ? <Text style={styles.note}>{sentNote}</Text> : null}
+        </View>
+
+        <View style={[styles.card, web && styles.col]}>
+          <Text style={styles.cardTitle}>Confirm a request</Text>
+          <Text style={styles.cardDesc}>
+            When someone uses your word, enter the word they read you. That is the only way the connection completes.
+          </Text>
+          {pending.length === 0 ? (
+            <Text style={styles.empty}>No open requests for {mine}.</Text>
+          ) : (
+            pending.map((ask) => (
+              <View key={ask.id} style={styles.ask}>
+                <Text style={styles.askName}>{ask.fromName}</Text>
+                <Text style={styles.askMeta}>
+                  {ask.kind === 'link' ? 'Used your daily link' : `Asked with “${ask.toWord}”`}
+                </Text>
+                <TextInput
+                  value={confirmWord[ask.id] || ''}
+                  onChangeText={(t) => setConfirmWord((prev) => ({ ...prev, [ask.id]: t }))}
+                  placeholder="their word"
+                  placeholderTextColor={Colors.textMuted}
+                  autoCapitalize="none"
+                  style={styles.input}
+                />
+                <PrimaryButton
+                  title="Connect"
+                  onPress={() => {
+                    const ok = confirmConnectAsk(ask.id, confirmWord[ask.id] || '');
+                    if (!ok) showToast('That word does not match theirs.');
+                  }}
+                />
+              </View>
+            ))
+          )}
+        </View>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Daily link</Text>
+        <Text style={styles.cardDesc}>Anyone with this link can ask to join you. It changes every day.</Text>
+        <Text style={styles.link} selectable>
+          {link || 'Preparing your link…'}
+        </Text>
+        <PrimaryButton title="Copy link" variant="secondary" onPress={() => void copyLink()} />
+      </View>
+
+      <View style={[styles.card, web && styles.disabled]}>
+        <Text style={styles.cardTitle}>Tap to add</Text>
+        <Text style={styles.cardDesc}>
+          Stand next to someone and tap phones. This only works in the phone app.
+        </Text>
+        {web ? (
+          <Text style={styles.phoneOnly}>Phone only</Text>
+        ) : (
+          <PrimaryButton title="Find nearby people" onPress={() => router.push('/connect-nearby')} />
+        )}
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.bgElevated, paddingHorizontal: Spacing.lg },
-  handle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: Colors.borderStrong,
-    marginBottom: 16,
+  screen: { flex: 1, backgroundColor: Colors.bg },
+  close: { position: 'absolute', right: 18, top: 16, zIndex: 2, padding: 8 },
+  kicker: {
+    color: Colors.accent,
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
   },
-  close: { position: 'absolute', right: 18, top: 54, zIndex: 2, padding: 8 },
-  title: { color: Colors.text, fontSize: 28, fontWeight: '700', letterSpacing: -0.5, marginTop: 8 },
-  subtitle: { color: Colors.textSecondary, marginTop: 6, marginBottom: 20, fontSize: 14, lineHeight: 20 },
+  title: { color: Colors.text, fontSize: 32, fontWeight: '800', letterSpacing: -0.6, marginTop: 6 },
+  subtitle: { color: Colors.textSecondary, marginTop: 8, marginBottom: 18, fontSize: 15, lineHeight: 22, maxWidth: 640 },
+  wordCard: {
+    backgroundColor: '#0C0C16',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(167,139,250,0.35)',
+    padding: 22,
+    marginBottom: 16,
+    maxWidth: 720,
+  },
+  wordLabel: { color: Colors.textMuted, fontSize: 12, fontWeight: '700', letterSpacing: 0.6 },
+  word: { color: '#fff', fontSize: 40, fontWeight: '800', letterSpacing: -0.8, marginTop: 6 },
+  track: { height: 4, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.08)', marginTop: 16, overflow: 'hidden' },
+  fill: { height: 4, backgroundColor: '#A78BFA' },
+  countdown: { color: '#C4B5FD', marginTop: 8, fontWeight: '700', fontSize: 13 },
+  columns: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', maxWidth: 720 },
+  col: { flex: 1 },
   card: {
     backgroundColor: Colors.bgCard,
     borderRadius: Radii.lg,
@@ -76,15 +209,32 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     padding: Spacing.lg,
     marginBottom: 12,
+    maxWidth: 720,
   },
-  iconWrap: {
-    width: 40,
-    height: 40,
+  disabled: { opacity: 0.45 },
+  cardTitle: { color: Colors.text, fontSize: 16, fontWeight: '800' },
+  cardDesc: { color: Colors.textSecondary, fontSize: 14, lineHeight: 20, marginTop: 6, marginBottom: 12 },
+  input: {
+    borderWidth: 1,
+    borderColor: Colors.border,
     borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
+    color: Colors.text,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 10,
+    fontSize: 16,
   },
-  cardTitle: { color: Colors.text, fontSize: 13, fontWeight: '800', letterSpacing: 1.2 },
-  cardDesc: { color: Colors.textSecondary, fontSize: 14, marginTop: 6, marginBottom: 14, lineHeight: 20 },
+  note: { color: '#67E8F9', marginTop: 10, fontWeight: '700' },
+  empty: { color: Colors.textMuted, fontSize: 13 },
+  ask: { marginBottom: 14 },
+  askName: { color: Colors.text, fontWeight: '800', fontSize: 15 },
+  askMeta: { color: Colors.textMuted, fontSize: 12, marginTop: 2, marginBottom: 8 },
+  link: { color: '#C4B5FD', fontSize: 14, marginBottom: 12 },
+  phoneOnly: {
+    color: Colors.textMuted,
+    fontWeight: '800',
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    fontSize: 12,
+  },
 });
