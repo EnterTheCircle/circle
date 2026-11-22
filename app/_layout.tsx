@@ -46,6 +46,11 @@ function AppStack() {
         animation: 'fade',
       }}
     >
+      {/* Public marketing — always available */}
+      <Stack.Screen name="about" options={{ headerShown: false }} />
+      <Stack.Screen name="tokenomics" options={{ headerShown: false }} />
+      <Stack.Screen name="circle-token" options={{ headerShown: false }} />
+
       <Stack.Protected guard={!hasSignedUp}>
         <Stack.Screen name="signup" options={{ headerShown: false }} />
       </Stack.Protected>

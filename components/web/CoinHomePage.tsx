@@ -442,6 +442,20 @@ export default function CoinHomePage() {
         style={[styles.landingUi, { opacity: fadeUi }]}
       >
         <View style={styles.landingTop}>
+          <View style={styles.landingNav}>
+            <Pressable onPress={() => router.push('/about')} style={styles.landingNavItem}>
+              <Text style={styles.landingNavTxt}>About</Text>
+            </Pressable>
+            <Text style={styles.landingNavDot}>·</Text>
+            <Pressable onPress={() => router.push('/tokenomics')} style={styles.landingNavItem}>
+              <Text style={styles.landingNavTxt}>Tokenomics</Text>
+            </Pressable>
+            <Text style={styles.landingNavDot}>·</Text>
+            <Pressable onPress={() => router.push('/circle-token')} style={styles.landingNavItem}>
+              <Text style={styles.landingNavTxt}>$CIRCLE</Text>
+            </Pressable>
+          </View>
+
           <Text style={styles.brand}>CIRCLE</Text>
           <Text style={styles.line}>Your world, as paths — not posts.</Text>
         </View>
@@ -631,12 +645,35 @@ const styles = StyleSheet.create({
   landingUi: {
     ...StyleSheet.absoluteFill,
     justifyContent: 'space-between',
-    paddingTop: 72,
-    paddingBottom: 64,
+    paddingTop: 36,
+    paddingBottom: 56,
     paddingHorizontal: 28,
     zIndex: 3,
   },
-  landingTop: { alignItems: 'center' },
+  landingTop: { alignItems: 'center', paddingTop: 8 },
+  landingNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    gap: 4,
+    marginBottom: 28,
+  },
+  landingNavItem: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  landingNavTxt: {
+    color: 'rgba(226,232,240,0.55)',
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.4,
+  },
+  landingNavDot: {
+    color: 'rgba(148,163,184,0.35)',
+    fontSize: 13,
+    paddingHorizontal: 2,
+  },
   landingBottom: { alignItems: 'center' },
   brand: {
     color: '#F8FAFC',
