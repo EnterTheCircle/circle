@@ -1,7 +1,7 @@
 import React from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Glyph, GlyphName } from '@/components/Glyph';
 import { Avatar, Badge, Card } from '@/components/ui';
 import { NETWORK_STATS, channelLabel, defaultAvatar, initialsFromName } from '@/constants/mockData';
 import { Colors, Radii } from '@/constants/theme';
@@ -47,7 +47,7 @@ export default function ProfileWeb() {
           >
             <Avatar initials={initials} color={Colors.accent} size={96} glow photo={profile.photo} />
             <View style={styles.cameraBadge}>
-              <Ionicons name="camera" size={14} color="#fff" />
+              <Glyph name="camera" size={14} color="#fff" />
             </View>
           </Pressable>
           <Pressable
@@ -91,11 +91,11 @@ export default function ProfileWeb() {
         </View>
 
         <View style={styles.menuCol}>
-          <MenuItem icon="planet-outline" title="My Circle" subtitle="Explore your relationship globe" onPress={() => router.push('/')} />
-          <MenuItem icon="bookmark-outline" title="Saved people" subtitle={`${saved.length} remembered`} onPress={() => router.push('/saved')} />
-          <MenuItem icon="create-outline" title="Edit profile" subtitle={profile.profession} onPress={() => router.push('/edit-profile')} />
-          <MenuItem icon="shield-outline" title="Privacy & discovery" subtitle="Control what your circle can see" onPress={() => router.push('/privacy-settings')} />
-          <MenuItem icon="notifications-outline" title="Notifications" subtitle="Useful updates only" onPress={() => router.push('/notification-settings')} />
+          <MenuItem icon="planet" title="My Circle" subtitle="Explore your relationship globe" onPress={() => router.push('/')} />
+          <MenuItem icon="bookmark" title="Saved people" subtitle={`${saved.length} remembered`} onPress={() => router.push('/saved')} />
+          <MenuItem icon="edit" title="Edit profile" subtitle={profile.profession} onPress={() => router.push('/edit-profile')} />
+          <MenuItem icon="shield" title="Privacy & discovery" subtitle="Control what your circle can see" onPress={() => router.push('/privacy-settings')} />
+          <MenuItem icon="bell" title="Notifications" subtitle="Useful updates only" onPress={() => router.push('/notification-settings')} />
           <Card style={{ marginTop: 18 }}>
             <Badge label="COMING SOON" tone="accent" />
             <Text style={styles.verifyTitle}>MyCircle Verified</Text>
@@ -122,7 +122,7 @@ function MenuItem({
   subtitle,
   onPress,
 }: {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: GlyphName;
   title: string;
   subtitle: string;
   onPress: () => void;
@@ -130,13 +130,15 @@ function MenuItem({
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.menu, pressed && { opacity: 0.85 }]}>
       <View style={styles.menuIcon}>
-        <Ionicons name={icon} size={18} color={Colors.accent} />
+        <Glyph name={icon} size={18} color={Colors.accent} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={styles.menuTitle}>{title}</Text>
         <Text style={styles.menuSub}>{subtitle}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
+      <View style={{ transform: [{ rotate: '180deg' }] }}>
+        <Glyph name="chevron" size={16} color={Colors.textMuted} />
+      </View>
     </Pressable>
   );
 }

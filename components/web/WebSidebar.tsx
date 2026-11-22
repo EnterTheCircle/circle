@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { usePathname, useRouter } from 'expo-router';
+import { Glyph, GlyphName } from '@/components/Glyph';
 import { Logo } from '@/components/Logo';
 import { Avatar } from '@/components/ui';
 import { initialsFromName } from '@/constants/mockData';
@@ -13,35 +13,35 @@ const NAV: {
   href: string;
   label: string;
   hint: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: GlyphName;
   match: (path: string) => boolean;
 }[] = [
   {
     href: '/',
     label: 'Circle',
     hint: 'Your universe',
-    icon: 'planet-outline',
+    icon: 'planet',
     match: (p) => p === '/' || p === '/index',
   },
   {
     href: '/discover',
     label: 'Discover',
     hint: 'Find who you need',
-    icon: 'compass-outline',
+    icon: 'compass',
     match: (p) => p.includes('discover'),
   },
   {
     href: '/introductions',
     label: 'Introductions',
     hint: 'Approve warm asks',
-    icon: 'git-network-outline',
+    icon: 'network',
     match: (p) => p.includes('introductions'),
   },
   {
     href: '/profile',
     label: 'Profile',
     hint: 'You & preferences',
-    icon: 'person-outline',
+    icon: 'person',
     match: (p) => p.includes('profile') || p.includes('privacy') || p.includes('notification'),
   },
 ];
@@ -96,11 +96,7 @@ export function WebSidebar() {
               ]}
             >
               <View style={[styles.iconWrap, active && styles.iconWrapActive]}>
-                <Ionicons
-                  name={item.icon}
-                  size={17}
-                  color={active ? '#C4B5FD' : Colors.textMuted}
-                />
+                <Glyph name={item.icon} size={17} color={active ? '#C4B5FD' : Colors.textMuted} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.itemLabel, active && styles.itemLabelActive]}>{item.label}</Text>
@@ -119,7 +115,7 @@ export function WebSidebar() {
       <View style={{ flex: 1 }} />
 
       <Pressable style={styles.connect} onPress={() => router.push('/connect')}>
-        <Ionicons name="add" size={18} color="#fff" />
+        <Glyph name="plus" size={16} color="#fff" />
         <Text style={styles.connectText}>Connect</Text>
       </Pressable>
 
@@ -136,7 +132,7 @@ export function WebSidebar() {
       </Pressable>
 
       <Pressable style={styles.signOut} onPress={onSignOut}>
-        <Ionicons name="log-out-outline" size={15} color={Colors.textMuted} />
+        <Glyph name="logout" size={15} color={Colors.textMuted} />
         <Text style={styles.signOutTxt}>Sign out</Text>
       </Pressable>
     </View>

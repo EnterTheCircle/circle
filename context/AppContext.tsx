@@ -268,9 +268,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         hasCompletedHowTo: true,
         account: nextAccount,
       });
-      showToast('Account ready');
     },
-    [persistOnboarding, showToast]
+    [persistOnboarding]
   );
 
   const signOut = useCallback(async () => {

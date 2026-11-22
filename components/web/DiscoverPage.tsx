@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Glyph } from '@/components/Glyph';
 import { Avatar, PrimaryButton } from '@/components/ui';
 import {
   ME,
@@ -83,13 +83,13 @@ export default function DiscoverWeb() {
           </Text>
         </View>
         <Pressable style={styles.saved} onPress={() => router.push('/saved')}>
-          <Ionicons name="bookmark-outline" size={16} color={Colors.accent} />
+          <Glyph name="bookmark" size={16} color={Colors.accent} />
           <Text style={styles.savedText}>Saved</Text>
         </Pressable>
       </View>
 
       <View style={styles.search}>
-        <Ionicons name="search" size={18} color={Colors.textMuted} />
+        <Glyph name="search" size={18} color={Colors.textMuted} />
         <TextInput
           value={query}
           onChangeText={(t) => {
@@ -108,7 +108,7 @@ export default function DiscoverWeb() {
               setSubmitted('');
             }}
           >
-            <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
+            <Glyph name="close" size={16} color={Colors.textMuted} />
           </Pressable>
         ) : null}
       </View>

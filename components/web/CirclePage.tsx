@@ -1,7 +1,9 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { LayoutChangeEvent, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Glyph } from '@/components/Glyph';
+import { TourOverlay, WelcomeOverlay } from '@/components/web/CircleGuide';
 import {
   DegreeFilter,
   NetworkGlobe,
@@ -40,6 +42,19 @@ export default function CircleWeb() {
   const [focusId, setFocusId] = useState('me');
   const [preview, setPreview] = useState<Person | null>(null);
   const [globeSize, setGlobeSize] = useState(720);
+  const [guide, setGuide] = useState<'welcome' | 'tour' | null>(null);
+  const [tourStep, setTourStep] = useState(0);
+
+  useEffect(() => {
+    AsyncStorage.getItem('circle.guide.v1').then((v) => {
+      if (!v) setGuide('welcome');
+    });
+  }, []);
+
+  const dismissGuide = () => {
+    setGuide(null);
+    void AsyncStorage.setItem('circle.guide.v1', 'done');
+  };
 
   const maxDegree = filterToMaxDegree(filter);
   const handleZoomChange = useCallback((next: number) => setZoom(next), []);
@@ -104,7 +119,7 @@ export default function CircleWeb() {
           </View>
         </View>
         <Pressable style={styles.bell} onPress={() => router.push('/notifications')}>
-          <Ionicons name="notifications-outline" size={18} color={Colors.text} />
+          <Glyph name="bell" size={18} color={Colors.text} />
           {unreadCount > 0 ? (
             <View style={styles.dot}>
               <Text style={styles.dotText}>{unreadCount}</Text>
@@ -139,7 +154,7 @@ export default function CircleWeb() {
           <View style={styles.toolbar}>
             {focusId !== 'me' ? (
               <Pressable style={styles.toolBtn} onPress={() => setFocusId('me')}>
-                <Ionicons name="home-outline" size={14} color={Colors.accent} />
+                <Glyph name="home" size={14} color={Colors.accent} />
                 <Text style={styles.toolTxt}>You</Text>
               </Pressable>
             ) : null}
@@ -159,14 +174,23 @@ export default function CircleWeb() {
             </View>
             <View style={styles.zoomRow}>
               <Pressable style={styles.iconBtn} onPress={() => setZoom((z) => clampZoom(z - 0.1))}>
-                <Ionicons name="remove" size={16} color={Colors.text} />
+                <Glyph name="minus" size={16} color={Colors.text} />
               </Pressable>
               <Pressable style={styles.iconBtn} onPress={() => setZoom((z) => clampZoom(z + 0.1))}>
-                <Ionicons name="add" size={16} color={Colors.text} />
+                <Glyph name="plus" size={16} color={Colors.text} />
               </Pressable>
               <Pressable style={styles.toolBtn} onPress={resetView}>
-                <Ionicons name="locate-outline" size={14} color={Colors.cyan} />
+                <Glyph name="locate" size={14} color={Colors.cyan} />
                 <Text style={[styles.toolTxt, { color: Colors.cyan }]}>Reset</Text>
+              </Pressable>
+              <Pressable
+                style={styles.toolBtn}
+                onPress={() => {
+                  setTourStep(0);
+                  setGuide('tour');
+                }}
+              >
+                <Text style={styles.toolTxt}>Tour</Text>
               </Pressable>
             </View>
           </View>
@@ -176,7 +200,7 @@ export default function CircleWeb() {
           {preview ? (
             <View style={styles.preview}>
               <Pressable onPress={() => setPreview(null)} style={styles.backRow}>
-                <Ionicons name="chevron-back" size={16} color={Colors.textMuted} />
+                <Glyph name="chevron" size={16} color={Colors.textMuted} />
                 <Text style={styles.backTxt}>Back to list</Text>
               </Pressable>
               {isGhostToSecond(preview) ? (
@@ -299,7 +323,7 @@ export default function CircleWeb() {
                   onPress={() => router.push('/connect')}
                 >
                   <View style={styles.plusAvatar}>
-                    <Ionicons name="add" size={20} color={Colors.accent} />
+                    <Glyph name="plus" size={18} color={Colors.accent} />
                   </View>
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={styles.rowName}>Invite someone</Text>
@@ -311,6 +335,24 @@ export default function CircleWeb() {
           )}
         </View>
       </View>
+      {guide === 'welcome' ? (
+        <WelcomeOverlay
+          name={mePerson.firstName}
+          onTour={() => {
+            setTourStep(0);
+            setGuide('tour');
+          }}
+          onSkip={dismissGuide}
+        />
+      ) : null}
+      {guide === 'tour' ? (
+        <TourOverlay
+          step={tourStep}
+          onBack={() => setTourStep((s) => Math.max(0, s - 1))}
+          onNext={() => setTourStep((s) => Math.min(4, s + 1))}
+          onClose={dismissGuide}
+        />
+      ) : null}
     </View>
   );
 }

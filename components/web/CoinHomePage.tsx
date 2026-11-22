@@ -12,6 +12,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AccountState, useApp } from '@/context/AppContext';
 import { Radii } from '@/constants/theme';
 import {
@@ -180,8 +181,8 @@ export default function CoinHomePage() {
       contactHandle: handle,
     };
     updateProfile({ name: displayName, photo: defaultAvatar(displayName) });
+    await AsyncStorage.removeItem('circle.guide.v1');
     await enterFromLanding(account);
-    showToast(`Welcome, ${displayName.split(' ')[0]}`);
     router.replace('/');
     setTimeout(() => {
       try {

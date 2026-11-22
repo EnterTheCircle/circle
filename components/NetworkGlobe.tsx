@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import Svg, { Circle, Defs, Ellipse, Path, RadialGradient, Stop } from 'react-native-svg';
-import { Ionicons } from '@expo/vector-icons';
+import { Glyph } from '@/components/Glyph';
 import {
   ME,
   Person,
@@ -720,7 +720,16 @@ export function NetworkGlobe({
               ]}
             >
               {isEmpty ? (
-                <Ionicons name="add" size={Math.max(12, n.size * 0.45)} color="#A78BFA" />
+                <Text
+                  style={{
+                    color: '#C4B5FD',
+                    fontSize: Math.max(14, n.size * 0.55),
+                    fontWeight: '500',
+                    lineHeight: Math.max(16, n.size * 0.6),
+                  }}
+                >
+                  +
+                </Text>
               ) : isGhostToSecond(n.person) ? (
                 <Text style={{ color: '#94A3B8', fontSize: Math.max(10, n.size * 0.32), fontWeight: '700' }}>
                   ?
@@ -775,24 +784,24 @@ export function NetworkGlobe({
           <View style={styles.topControls}>
             {focusId !== 'me' ? (
               <Pressable style={styles.chipBtn} onPress={() => onFocusPerson(ME)}>
-                <Ionicons name="home" size={13} color={Colors.accent} />
+                <Glyph name="home" size={13} color={Colors.accent} />
                 <Text style={styles.chipTxt}>My circle</Text>
               </Pressable>
             ) : (
               <View />
             )}
             <Pressable style={styles.chipBtn} onPress={reset}>
-              <Ionicons name="locate" size={13} color={Colors.cyan} />
+              <Glyph name="locate" size={13} color={Colors.cyan} />
               <Text style={[styles.chipTxt, { color: Colors.cyan }]}>Reset</Text>
             </Pressable>
           </View>
 
           <View style={styles.zoomControls}>
             <Pressable style={styles.zoomBtn} onPress={() => onZoomChange(clampZoom(zoom + 0.1))}>
-              <Ionicons name="add" size={18} color="#fff" />
+              <Glyph name="plus" size={18} color="#fff" />
             </Pressable>
             <Pressable style={styles.zoomBtn} onPress={() => onZoomChange(clampZoom(zoom - 0.1))}>
-              <Ionicons name="remove" size={18} color="#fff" />
+              <Glyph name="minus" size={18} color="#fff" />
             </Pressable>
           </View>
         </>
