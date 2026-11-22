@@ -83,6 +83,10 @@ type Props = {
   size?: number;
   /** Called when user taps an empty + seat. */
   onInvite?: () => void;
+  /** Live signed-in user for the center nucleus (name + photo). */
+  mePerson?: Person;
+  /** Show First 10k badge under the center label. */
+  showFirst10k?: boolean;
 };
 
 function rotX(v: Vec3, a: number): Vec3 {
@@ -292,6 +296,8 @@ export function NetworkGlobe({
   hideChrome,
   size: sizeProp,
   onInvite,
+  mePerson,
+  showFirst10k,
 }: Props) {
   const size = sizeProp ?? DEFAULT_GLOBE_SIZE;
   const [tick, setTick] = useState(0);
@@ -307,7 +313,10 @@ export function NetworkGlobe({
   const mode = useRef<'none' | 'pan' | 'pinch'>('none');
   zoomRef.current = zoom;
 
-  const focus = getPerson(focusId) || ME;
+  const focus =
+    focusId === 'me' && mePerson
+      ? mePerson
+      : getPerson(focusId) || mePerson || ME;
   const baseNodes = useMemo(() => buildNodes(focusId, size), [focusId, size]);
 
   useEffect(() => {
@@ -751,6 +760,11 @@ export function NetworkGlobe({
 
       <View style={[styles.centerLabel, { top: cy + coreSize / 2 + 8 }]} pointerEvents="none">
         <Text style={styles.centerName}>{focus.firstName}</Text>
+        {focusId === 'me' && showFirst10k ? (
+          <View style={styles.first10kBadge}>
+            <Text style={styles.first10kText}>First 10k</Text>
+          </View>
+        ) : null}
         <Text style={styles.centerSub}>
           {focusId === 'me' ? 'Your connections' : 'Tap again for profile'}
         </Text>
@@ -813,6 +827,22 @@ const styles = StyleSheet.create({
   centerLabel: { position: 'absolute', left: 0, right: 0, alignItems: 'center', zIndex: 220 },
   centerName: { color: '#fff', fontSize: 16, fontWeight: '800' },
   centerSub: { color: '#94A3B8', fontSize: 11, marginTop: 3 },
+  first10kBadge: {
+    marginTop: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 999,
+    backgroundColor: 'rgba(167,139,250,0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(167,139,250,0.55)',
+  },
+  first10kText: {
+    color: '#C4B5FD',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+  },
   topControls: {
     position: 'absolute',
     top: 8,

@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,7 +13,7 @@ import {
 import { ProfilePreview } from '@/components/ProfilePreview';
 import { Logo } from '@/components/Logo';
 import { Avatar } from '@/components/ui';
-import { ME, NETWORK_STATS, Person, getPerson } from '@/constants/mockData';
+import { NETWORK_STATS, Person, getPerson, initialsFromName } from '@/constants/mockData';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useApp } from '@/context/AppContext';
 import CircleWeb from '@/components/web/CirclePage';
@@ -44,6 +44,23 @@ function CircleNative() {
   const bottomPad = Math.max(insets.bottom, 10) + TAB_CLEARANCE;
 
   const handleZoomChange = useCallback((next: number) => setZoom(next), []);
+
+  const mePerson = useMemo<Person>(() => {
+    const name = profile.name?.trim() || 'You';
+    return {
+      id: 'me',
+      name,
+      firstName: name.split(/\s+/)[0] || 'You',
+      profession: profile.profession || 'Member',
+      location: profile.location || '',
+      interests: profile.interests || [],
+      bio: profile.bio || '',
+      degree: 0,
+      color: '#FFFFFF',
+      initials: initialsFromName(name),
+      photo: profile.photo,
+    };
+  }, [profile]);
 
   const applyFilter = (f: DegreeFilter) => {
     setFilter(f);
@@ -77,14 +94,10 @@ function CircleNative() {
           </Pressable>
           <Pressable onPress={() => router.push('/(tabs)/profile')}>
             <Avatar
-              initials={profile.name
-                .split(' ')
-                .map((n) => n[0])
-                .join('')
-                .slice(0, 2)}
+              initials={initialsFromName(profile.name)}
               color={Colors.accent}
               size={34}
-              photo={ME.photo}
+              photo={profile.photo}
             />
           </Pressable>
         </View>
@@ -105,6 +118,8 @@ function CircleNative() {
           onZoomChange={handleZoomChange}
           focusId={focusId}
           highlightId={preview?.id}
+          mePerson={mePerson}
+          showFirst10k={profile.first10k}
           onInvite={() => router.push('/connect')}
           onFocusPerson={(p) => {
             setPreview(null);

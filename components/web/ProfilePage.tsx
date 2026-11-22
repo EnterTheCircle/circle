@@ -1,20 +1,33 @@
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Avatar, Badge, Card } from '@/components/ui';
-import { ME, NETWORK_STATS, channelLabel } from '@/constants/mockData';
+import { NETWORK_STATS, channelLabel, defaultAvatar, initialsFromName } from '@/constants/mockData';
 import { Colors, Radii } from '@/constants/theme';
 import { useApp } from '@/context/AppContext';
 
+function pickPhotoFile(onPicked: (dataUrl: string) => void) {
+  if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.onchange = () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') onPicked(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+}
+
 export default function ProfileWeb() {
   const router = useRouter();
-  const { profile, saved, account } = useApp();
-  const initials = profile.name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .slice(0, 2);
+  const { profile, saved, account, updateProfile, showToast } = useApp();
+  const initials = initialsFromName(profile.name);
 
   return (
     <ScrollView style={styles.page} contentContainerStyle={styles.content}>
@@ -23,8 +36,34 @@ export default function ProfileWeb() {
 
       <View style={styles.layout}>
         <View style={styles.hero}>
-          <Avatar initials={initials} color={Colors.accent} size={96} glow photo={ME.photo} />
+          <Pressable
+            onPress={() =>
+              pickPhotoFile((uri) => {
+                updateProfile({ photo: uri });
+                showToast('Photo updated');
+              })
+            }
+            style={styles.avatarWrap}
+          >
+            <Avatar initials={initials} color={Colors.accent} size={96} glow photo={profile.photo} />
+            <View style={styles.cameraBadge}>
+              <Ionicons name="camera" size={14} color="#fff" />
+            </View>
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              updateProfile({ photo: defaultAvatar(profile.name) });
+              showToast('Using generated photo');
+            }}
+          >
+            <Text style={styles.changePhoto}>Change photo · or reset to generated</Text>
+          </Pressable>
           <Text style={styles.name}>{profile.name}</Text>
+          {profile.first10k ? (
+            <View style={styles.first10k}>
+              <Text style={styles.first10kText}>First 10k</Text>
+            </View>
+          ) : null}
           <Text style={styles.quote}>“Your circle is your world.”</Text>
           <Text style={styles.meta}>
             {profile.location} · {profile.profession}
@@ -117,7 +156,38 @@ const styles = StyleSheet.create({
     padding: 28,
     alignItems: 'center',
   },
+  avatarWrap: { position: 'relative' },
+  cameraBadge: {
+    position: 'absolute',
+    right: 2,
+    bottom: 2,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.accentStrong,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: Colors.bgCard,
+  },
+  changePhoto: { color: Colors.accent, fontSize: 12, fontWeight: '600', marginTop: 10 },
   name: { color: Colors.text, fontSize: 24, fontWeight: '800', marginTop: 16 },
+  first10k: {
+    marginTop: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: 'rgba(167,139,250,0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(167,139,250,0.5)',
+  },
+  first10kText: {
+    color: '#C4B5FD',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.7,
+    textTransform: 'uppercase',
+  },
   quote: { color: Colors.textSecondary, fontStyle: 'italic', marginTop: 6 },
   meta: { color: Colors.textMuted, marginTop: 8, fontSize: 13, textAlign: 'center' },
   bio: { color: Colors.textSecondary, textAlign: 'center', marginTop: 14, lineHeight: 21 },

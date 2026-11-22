@@ -20,6 +20,7 @@ import {
   signIn,
   signUp,
 } from '@/lib/circleAuth';
+import { defaultAvatar } from '@/constants/mockData';
 
 const AVATAR = require('../../assets/images/coin/avatar.jpg');
 /** Native driver is flaky for multi-prop web animations — callbacks never fire. */
@@ -178,7 +179,7 @@ export default function CoinHomePage() {
       contactChannel: 'email',
       contactHandle: handle,
     };
-    updateProfile({ name: displayName });
+    updateProfile({ name: displayName, photo: defaultAvatar(displayName) });
     await enterFromLanding(account);
     showToast(`Welcome, ${displayName.split(' ')[0]}`);
     router.replace('/');

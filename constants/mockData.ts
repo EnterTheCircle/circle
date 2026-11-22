@@ -39,6 +39,22 @@ export function portrait(kind: 'men' | 'women', n: number) {
   return `https://randomuser.me/api/portraits/${kind}/${n}.jpg`;
 }
 
+/** Auto-generated default avatar from a name/seed (no API key). */
+export function defaultAvatar(seed: string) {
+  const s = encodeURIComponent((seed || 'circle').trim() || 'circle');
+  return `https://api.dicebear.com/9.x/glass/png?seed=${s}&size=256`;
+}
+
+export function initialsFromName(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((n) => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || 'YO';
+}
+
 export type SavedCategory =
   | 'Automotive'
   | 'Home Services'
@@ -70,19 +86,39 @@ export type AppNotification = {
 
 export const ME: Person = {
   id: 'me',
-  name: 'Surya Khanna',
-  firstName: 'Surya',
-  profession: 'Finance & Technology',
-  location: 'New York',
-  interests: ['Markets', 'Madrid', 'Travel', 'Startups'],
+  name: 'You',
+  firstName: 'You',
+  profession: 'Member',
+  location: '',
+  interests: [],
   bio: 'Building meaningful connections in the real world. Your circle is your world.',
   degree: 0,
   color: '#FFFFFF',
-  initials: 'SK',
-  photo: portrait('men', 32),
+  initials: 'YO',
+  photo: defaultAvatar('circle-member'),
 };
 
+/** Everyone’s first connection — the Founder of the app. */
+export const FOUNDER: Person = {
+  id: 'founder',
+  name: 'Founder of the app',
+  firstName: 'Founder',
+  profession: 'Founder of Circle',
+  location: 'New York',
+  interests: ['Circle', 'Intros', 'Community'],
+  bio: 'Built Circle so warm intros beat cold DMs. You’re in the first 10k.',
+  degree: 1,
+  color: '#A78BFA',
+  initials: 'FA',
+  photo: defaultAvatar('founder-of-circle'),
+  verified: true,
+};
+
+/** Live circle for the signed-in user (orbit + list). */
+export const MY_CIRCLE: Person[] = [FOUNDER];
+
 export const PEOPLE: Person[] = [
+  FOUNDER,
   {
     id: 'misha',
     name: 'Misha Volkov',
@@ -487,8 +523,8 @@ export const SAVED_CATEGORIES: SavedCategory[] = [
 ];
 
 export const NETWORK_STATS = {
-  direct: 35,
-  extended: 248,
+  direct: MY_CIRCLE.length,
+  extended: 0,
 };
 
 /** Per-person contact / privacy overlays for the prototype */
@@ -655,7 +691,8 @@ export function degreeLabel(degree: Degree): string {
 /** Undirected adjacency for the prototype graph. */
 export function getNeighbors(personId: string): Person[] {
   if (personId === 'me') {
-    return PEOPLE.filter((p) => p.degree === 1);
+    // New members start with the Founder only — other seats are + invites.
+    return MY_CIRCLE.map(enrichPerson);
   }
 
   const person = getPerson(personId);

@@ -16,10 +16,13 @@ import {
   ME,
   Person,
   SavedCategory,
+  defaultAvatar,
   getPerson,
 } from '@/constants/mockData';
+import { getSession } from '@/lib/circleAuth';
 
 const ONBOARDING_KEY = 'mycircle.onboarding.v1';
+const PROFILE_KEY = 'mycircle.profile.v1';
 
 export type ContactsPermissionState = 'undetermined' | 'granted' | 'denied';
 
@@ -60,6 +63,10 @@ type ProfileState = {
   profession: string;
   bio: string;
   interests: string[];
+  /** Profile photo URI (generated default or user-picked). */
+  photo: string;
+  /** Early member badge */
+  first10k: boolean;
 };
 
 type AppContextValue = {
@@ -119,12 +126,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     profession: ME.profession,
     bio: ME.bio,
     interests: ME.interests,
+    photo: defaultAvatar('circle-member'),
+    first10k: true,
   });
-  const [saved, setSaved] = useState<SavedPerson[]>([
-    { personId: 'david', category: 'Automotive', note: 'Saved through Rahul.' },
-    { personId: 'alex-morgan', category: 'Hair & Beauty', note: 'Saved through Misha.' },
-    { personId: 'michael', category: 'Restaurants & Bars', note: 'Saved through James.' },
-  ]);
+  const [saved, setSaved] = useState<SavedPerson[]>([]);
   const [intros, setIntros] = useState<IntroRequest[]>(INITIAL_INTROS);
   const [notifications, setNotifications] = useState<AppNotification[]>(INITIAL_NOTIFICATIONS);
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>({
@@ -162,6 +167,35 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           if (parsed.account) {
             setAccount({ ...DEFAULT_ACCOUNT, ...parsed.account });
           }
+        }
+        const profileRaw = await AsyncStorage.getItem(PROFILE_KEY);
+        const session = await getSession();
+        if (cancelled) return;
+        if (profileRaw) {
+          const parsed = JSON.parse(profileRaw) as Partial<ProfileState>;
+          setProfile((prev) => {
+            const name = parsed.name?.trim() || session?.name?.trim() || prev.name;
+            return {
+              ...prev,
+              ...parsed,
+              name,
+              photo: parsed.photo || defaultAvatar(name),
+              first10k: parsed.first10k !== false,
+            };
+          });
+        } else if (session?.name) {
+          const name = session.name.trim();
+          const next: ProfileState = {
+            name,
+            location: '',
+            profession: 'Member',
+            bio: ME.bio,
+            interests: [],
+            photo: defaultAvatar(name),
+            first10k: true,
+          };
+          setProfile(next);
+          await AsyncStorage.setItem(PROFILE_KEY, JSON.stringify(next));
         }
       } catch {
         /* ignore corrupt storage */
@@ -252,7 +286,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [persistOnboarding, showToast]);
 
   const updateProfile = useCallback((patch: Partial<ProfileState>) => {
-    setProfile((p) => ({ ...p, ...patch }));
+    setProfile((p) => {
+      const next = { ...p, ...patch };
+      if (patch.name && !patch.photo && (!p.photo || p.photo.includes('dicebear.com'))) {
+        next.photo = defaultAvatar(patch.name);
+      }
+      void AsyncStorage.setItem(PROFILE_KEY, JSON.stringify(next));
+      return next;
+    });
   }, []);
 
   const rememberPerson = useCallback(

@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Avatar, Badge, Card } from '@/components/ui';
-import { ME, NETWORK_STATS, channelLabel } from '@/constants/mockData';
+import { NETWORK_STATS, channelLabel } from '@/constants/mockData';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useApp } from '@/context/AppContext';
 import ProfileWeb from '@/components/web/ProfilePage';
@@ -32,8 +32,13 @@ function ProfileNative() {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.hero}>
-        <Avatar initials={initials} color={Colors.accent} size={84} glow photo={ME.photo} />
+        <Avatar initials={initials} color={Colors.accent} size={84} glow photo={profile.photo} />
         <Text style={styles.name}>{profile.name.toUpperCase()}</Text>
+        {profile.first10k ? (
+          <View style={styles.first10k}>
+            <Text style={styles.first10kText}>First 10k</Text>
+          </View>
+        ) : null}
         <Text style={styles.quote}>“Your circle is your world.”</Text>
         <Text style={styles.meta}>
           {profile.location} · {profile.profession}
@@ -151,6 +156,22 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1.5,
     marginTop: 14,
+  },
+  first10k: {
+    marginTop: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: 'rgba(167,139,250,0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(167,139,250,0.5)',
+  },
+  first10kText: {
+    color: '#C4B5FD',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.7,
+    textTransform: 'uppercase',
   },
   quote: { color: Colors.textSecondary, fontStyle: 'italic', marginTop: 6, fontSize: 14 },
   meta: { color: Colors.textMuted, marginTop: 8, fontSize: 13 },

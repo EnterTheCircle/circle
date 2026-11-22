@@ -10,11 +10,12 @@ import {
 } from '@/components/NetworkGlobe';
 import { Avatar, PrimaryButton } from '@/components/ui';
 import {
+  MY_CIRCLE,
   NETWORK_STATS,
-  PEOPLE,
   Person,
   enrichPerson,
   getPerson,
+  initialsFromName,
   isGhostToSecond,
 } from '@/constants/mockData';
 import { Colors, Radii } from '@/constants/theme';
@@ -43,6 +44,24 @@ export default function CircleWeb() {
   const maxDegree = filterToMaxDegree(filter);
   const handleZoomChange = useCallback((next: number) => setZoom(next), []);
 
+  const mePerson = useMemo<Person>(() => {
+    const name = profile.name?.trim() || 'You';
+    const firstName = name.split(/\s+/)[0] || 'You';
+    return {
+      id: 'me',
+      name,
+      firstName,
+      profession: profile.profession || 'Member',
+      location: profile.location || '',
+      interests: profile.interests || [],
+      bio: profile.bio || '',
+      degree: 0,
+      color: '#FFFFFF',
+      initials: initialsFromName(name),
+      photo: profile.photo,
+    };
+  }, [profile]);
+
   const applyFilter = (f: DegreeFilter) => {
     setFilter(f);
     setZoom(f === 'all' ? WEB_ZOOM_FOR_DEGREE[3] : WEB_ZOOM_FOR_DEGREE[f]);
@@ -64,12 +83,12 @@ export default function CircleWeb() {
 
   const people = useMemo(() => {
     const max = filterToMaxDegree(filter);
-    return PEOPLE.map(enrichPerson)
+    return MY_CIRCLE.map(enrichPerson)
       .filter((p) => p.degree <= max)
       .sort((a, b) => a.degree - b.degree || a.name.localeCompare(b.name));
   }, [filter]);
 
-  const focus = getPerson(focusId);
+  const focus = focusId === 'me' ? mePerson : getPerson(focusId);
 
   return (
     <View style={styles.page}>
@@ -105,6 +124,8 @@ export default function CircleWeb() {
               focusId={focusId}
               highlightId={preview?.id}
               hideChrome
+              mePerson={mePerson}
+              showFirst10k={profile.first10k}
               onInvite={() => router.push('/connect')}
               onFocusPerson={(p) => {
                 setPreview(null);
@@ -175,20 +196,30 @@ export default function CircleWeb() {
                 <>
                   <Avatar
                     initials={preview.initials}
-                    photo={preview.photo}
+                    photo={preview.id === 'me' ? mePerson.photo : preview.photo}
                     color={preview.color}
                     size={72}
                   />
-                  <Text style={styles.previewName}>{preview.name}</Text>
+                  <Text style={styles.previewName}>
+                    {preview.id === 'me' ? mePerson.name : preview.name}
+                  </Text>
+                  {(preview.id === 'me' ? profile.first10k : false) ? (
+                    <View style={styles.first10k}>
+                      <Text style={styles.first10kText}>First 10k</Text>
+                    </View>
+                  ) : null}
                   <Text style={styles.previewMeta}>
-                    {preview.profession} · {preview.location}
+                    {preview.profession}
+                    {preview.location ? ` · ${preview.location}` : ''}
                   </Text>
                   <Text style={styles.previewDeg}>
-                    {preview.degree === 1
-                      ? 'Your connections'
-                      : preview.degree === 2
-                        ? `Through your circle · via ${preview.via || 'mutual'}`
-                        : 'Further out'}
+                    {preview.id === 'me'
+                      ? 'You'
+                      : preview.degree === 1
+                        ? 'Your connections'
+                        : preview.degree === 2
+                          ? `Through your circle · via ${preview.via || 'mutual'}`
+                          : 'Further out'}
                   </Text>
                   <Text style={styles.previewBio}>{preview.bio}</Text>
                 </>
@@ -238,63 +269,44 @@ export default function CircleWeb() {
               contentContainerStyle={{ paddingBottom: 24 }}
               showsVerticalScrollIndicator={false}
             >
-              {([1, 2, 3] as const).map((degree) => {
-                const group = people.filter((p) => p.degree === degree);
-                if (group.length === 0) return null;
-                const title =
-                  degree === 1
-                    ? 'Your connections'
-                    : degree === 2
-                      ? 'Through your circle'
-                      : 'Further out';
-                return (
-                  <View key={degree} style={{ marginBottom: 14 }}>
-                    <Text style={styles.sectionLabel}>{title}</Text>
-                    {group.map((p) => {
-                      const active = focusId === p.id;
-                      const ghost = isGhostToSecond(p);
-                      return (
-                        <Pressable
-                          key={p.id}
-                          style={[
-                            styles.row,
-                            degree === 1 ? styles.rowDirect : styles.rowThrough,
-                            active && styles.rowActive,
-                          ]}
-                          onPress={() => {
-                            setFocusId(p.id);
-                            setPreview(p);
-                          }}
-                        >
-                          {ghost ? (
-                            <Avatar initials="?" color="#64748B" size={40} />
-                          ) : (
-                            <Avatar
-                              initials={p.initials}
-                              photo={p.photo}
-                              color={p.color}
-                              size={40}
-                            />
-                          )}
-                          <View style={{ flex: 1, minWidth: 0 }}>
-                            <Text
-                              style={[styles.rowName, ghost && styles.rowNameGhost]}
-                              numberOfLines={1}
-                            >
-                              {ghost ? 'Confidential' : p.name}
-                            </Text>
-                            <Text style={styles.rowMeta} numberOfLines={1}>
-                              {ghost
-                                ? `Via ${p.via || 'mutual'}`
-                                : p.profession}
-                            </Text>
-                          </View>
-                        </Pressable>
-                      );
-                    })}
+              <View style={{ marginBottom: 14 }}>
+                <Text style={styles.sectionLabel}>Your connections</Text>
+                {people.map((p) => {
+                  const active = focusId === p.id;
+                  return (
+                    <Pressable
+                      key={p.id}
+                      style={[styles.row, styles.rowDirect, active && styles.rowActive]}
+                      onPress={() => {
+                        setFocusId(p.id);
+                        setPreview(p);
+                      }}
+                    >
+                      <Avatar initials={p.initials} photo={p.photo} color={p.color} size={40} />
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Text style={styles.rowName} numberOfLines={1}>
+                          {p.name}
+                        </Text>
+                        <Text style={styles.rowMeta} numberOfLines={1}>
+                          {p.profession}
+                        </Text>
+                      </View>
+                    </Pressable>
+                  );
+                })}
+                <Pressable
+                  style={[styles.row, styles.rowInvite]}
+                  onPress={() => router.push('/connect')}
+                >
+                  <View style={styles.plusAvatar}>
+                    <Ionicons name="add" size={20} color={Colors.accent} />
                   </View>
-                );
-              })}
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={styles.rowName}>Invite someone</Text>
+                    <Text style={styles.rowMeta}>Open seats on your orbit</Text>
+                  </View>
+                </Pressable>
+              </View>
             </ScrollView>
           )}
         </View>
@@ -440,18 +452,45 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(34,211,238,0.06)',
     borderColor: 'rgba(34,211,238,0.16)',
   },
-  rowThrough: {
-    backgroundColor: 'rgba(167,139,250,0.07)',
-    borderColor: 'rgba(167,139,250,0.18)',
+  rowInvite: {
+    backgroundColor: 'rgba(167,139,250,0.06)',
+    borderColor: 'rgba(167,139,250,0.22)',
+    borderStyle: 'dashed',
+  },
+  plusAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: 'rgba(167,139,250,0.55)',
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(15,23,42,0.72)',
   },
   rowActive: { borderColor: Colors.accent, backgroundColor: Colors.accentSoft },
   rowName: { color: Colors.text, fontWeight: '600', fontSize: 13 },
-  rowNameGhost: { color: Colors.textSecondary, fontStyle: 'italic' },
   rowMeta: { color: Colors.textMuted, fontSize: 11, marginTop: 2 },
   preview: { alignItems: 'center', paddingTop: 4 },
   backRow: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 2, marginBottom: 14 },
   backTxt: { color: Colors.textMuted, fontSize: 12, fontWeight: '600' },
   previewName: { color: Colors.text, fontSize: 20, fontWeight: '800', marginTop: 12, textAlign: 'center' },
+  first10k: {
+    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: 'rgba(167,139,250,0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(167,139,250,0.5)',
+  },
+  first10kText: {
+    color: '#C4B5FD',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.7,
+    textTransform: 'uppercase',
+  },
   previewMeta: { color: Colors.textSecondary, marginTop: 4, textAlign: 'center' },
   previewDeg: { color: Colors.accent, marginTop: 6, fontWeight: '600', fontSize: 12 },
   previewBio: { color: Colors.textSecondary, marginTop: 12, lineHeight: 20, textAlign: 'center' },

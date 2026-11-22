@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { usePathname, useRouter } from 'expo-router';
 import { Logo } from '@/components/Logo';
 import { Avatar } from '@/components/ui';
-import { ME } from '@/constants/mockData';
+import { initialsFromName } from '@/constants/mockData';
 import { Colors, Radii } from '@/constants/theme';
 import { useApp } from '@/context/AppContext';
 import { signOut as authSignOut } from '@/lib/circleAuth';
@@ -51,12 +51,7 @@ export function WebSidebar() {
   const pathname = usePathname();
   const { pendingIntroCount, profile, unreadCount, signOut } = useApp();
 
-  const initials = profile.name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase() || 'YO';
+  const initials = initialsFromName(profile.name);
 
   const onSignOut = async () => {
     await authSignOut();
@@ -129,7 +124,7 @@ export function WebSidebar() {
       </Pressable>
 
       <Pressable style={styles.user} onPress={() => router.push('/profile')}>
-        <Avatar initials={initials} photo={ME.photo} color={Colors.accent} size={36} />
+        <Avatar initials={initials} photo={profile.photo} color={Colors.accent} size={36} />
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={styles.userName} numberOfLines={1}>
             {profile.name}

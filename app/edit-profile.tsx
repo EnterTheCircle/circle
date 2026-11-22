@@ -1,9 +1,27 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Input, PrimaryButton } from '@/components/ui';
+import { Avatar, Input, PrimaryButton } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
 import { useApp } from '@/context/AppContext';
+import { defaultAvatar, initialsFromName } from '@/constants/mockData';
+
+function pickPhotoFile(onPicked: (dataUrl: string) => void) {
+  if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.onchange = () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') onPicked(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+}
 
 export default function EditProfile() {
   const { profile, updateProfile, showToast } = useApp();
@@ -13,6 +31,7 @@ export default function EditProfile() {
   const [profession, setProfession] = useState(profile.profession);
   const [bio, setBio] = useState(profile.bio);
   const [interests, setInterests] = useState(profile.interests.join(', '));
+  const [photo, setPhoto] = useState(profile.photo);
 
   return (
     <ScrollView
@@ -20,6 +39,22 @@ export default function EditProfile() {
       contentContainerStyle={{ padding: Spacing.lg, paddingBottom: 40 }}
       keyboardShouldPersistTaps="handled"
     >
+      <View style={styles.photoBlock}>
+        <Avatar initials={initialsFromName(name)} photo={photo} color={Colors.accent} size={88} glow />
+        <Pressable
+          onPress={() =>
+            pickPhotoFile((uri) => {
+              setPhoto(uri);
+              showToast('Photo selected — save to keep it');
+            })
+          }
+        >
+          <Text style={styles.photoLink}>Upload photo</Text>
+        </Pressable>
+        <Pressable onPress={() => setPhoto(defaultAvatar(name || 'circle'))}>
+          <Text style={styles.photoReset}>Use generated default</Text>
+        </Pressable>
+      </View>
       <Field label="Name" value={name} onChangeText={setName} />
       <Field label="Location" value={location} onChangeText={setLocation} />
       <Field label="Profession" value={profession} onChangeText={setProfession} />
@@ -37,6 +72,7 @@ export default function EditProfile() {
             location,
             profession,
             bio,
+            photo,
             interests: interests
               .split(',')
               .map((s) => s.trim())
@@ -70,6 +106,9 @@ function Field({
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.bg },
+  photoBlock: { alignItems: 'center', marginBottom: 20, gap: 8 },
+  photoLink: { color: Colors.accent, fontWeight: '700', fontSize: 13 },
+  photoReset: { color: Colors.textMuted, fontSize: 12, fontWeight: '600' },
   label: {
     color: Colors.textMuted,
     fontSize: 11,
