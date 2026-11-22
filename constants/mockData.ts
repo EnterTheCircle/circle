@@ -2,7 +2,7 @@ import { Linking } from 'react-native';
 
 export type Degree = 0 | 1 | 2 | 3;
 
-export type ContactChannel = 'whatsapp' | 'linkedin' | 'mycircle' | 'email' | 'imessage';
+export type ContactChannel = 'whatsapp' | 'linkedin' | 'email' | 'imessage' | 'discord' | 'mycircle';
 
 export type Person = {
   id: string;
@@ -612,8 +612,10 @@ export function channelLabel(ch: ContactChannel): string {
       return 'Email';
     case 'imessage':
       return 'iMessage';
+    case 'discord':
+      return 'Discord';
     default:
-      return 'MyCircle';
+      return 'Circle';
   }
 }
 

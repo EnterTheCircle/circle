@@ -17,8 +17,15 @@ export const TOUR_STEPS = [
     route: '/discover',
     kicker: 'Discover',
     title: 'Search who you need',
-    body: 'Type a role — lawyer, stylist, founder. Circle looks through your 1st and 2nd, then you ask the mutual for a warm intro.',
+    body: 'Type a role — lawyer, stylist, founder. Results stay inside your 1st and 2nd circle.',
     example: 'Try “lawyer”',
+  },
+  {
+    id: 'ask' as const,
+    route: '/discover',
+    kicker: 'Ask',
+    title: 'Ask, then track it',
+    body: 'Open someone in your 2nd circle and ask the mutual for an intro. The ask is saved under Introductions. Sent is what you asked. Received is what you still need to approve.',
   },
   {
     id: 'add' as const,
@@ -31,8 +38,8 @@ export const TOUR_STEPS = [
     id: 'introductions' as const,
     route: '/introductions',
     kicker: 'Introductions',
-    title: 'Warm asks live here',
-    body: 'You are already connected with the Founder through Circle. New asks from your circle show up here for you to approve.',
+    title: 'Track every intro',
+    body: 'You are already connected with the Founder through Circle. Received holds asks waiting on you. Sent holds the ones you asked for, until the mutual approves.',
   },
   {
     id: 'profile' as const,

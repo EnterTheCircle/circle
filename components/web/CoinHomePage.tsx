@@ -5,6 +5,7 @@ import {
   Image,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -14,6 +15,7 @@ import {
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AccountState, useApp } from '@/context/AppContext';
+import { CircleChannel } from '@/lib/circleAuth';
 import { Radii } from '@/constants/theme';
 import {
   requestPasswordReset,
@@ -70,7 +72,11 @@ export default function CoinHomePage() {
   const [phase, setPhase] = useState<Phase>('landing');
   const [storyIndex, setStoryIndex] = useState(0);
   const [authMode, setAuthMode] = useState<AuthMode>('signin');
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [username, setUsername] = useState('');
+  const [channel, setChannel] = useState<CircleChannel>('whatsapp');
+  const [credential, setCredential] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [resetToken, setResetToken] = useState('');
@@ -173,11 +179,15 @@ export default function CoinHomePage() {
     else setPhase('auth');
   };
 
-  const enterApp = async (displayName: string, handle: string) => {
+  const enterApp = async (
+    displayName: string,
+    handle: string,
+    contactChannel: AccountState['contactChannel'] = 'email'
+  ) => {
     const account: AccountState = {
-      phone: '',
+      phone: contactChannel === 'whatsapp' || contactChannel === 'imessage' ? handle : '',
       contactsPermission: 'undetermined',
-      contactChannel: 'email',
+      contactChannel,
       contactHandle: handle,
     };
     updateProfile({ name: displayName, photo: defaultAvatar(displayName) });
@@ -200,21 +210,32 @@ export default function CoinHomePage() {
     setBusy(true);
     try {
       if (authMode === 'signin') {
-        const res = await signIn({ email, password });
+        const res = await signIn({ username: email, password });
         if (!res.ok) {
           setAuthError(res.error);
           return;
         }
-        await enterApp(res.session.name, res.session.email);
+        await enterApp(
+          res.session.name,
+          res.session.credential || res.session.email,
+          res.session.channel || 'email'
+        );
         return;
       }
       if (authMode === 'signup') {
-        const res = await signUp({ email, password, name });
+        const res = await signUp({
+          firstName,
+          lastName,
+          username,
+          password,
+          channel,
+          credential,
+        });
         if (!res.ok) {
           setAuthError(res.error);
           return;
         }
-        await enterApp(res.session.name, res.session.email);
+        await enterApp(res.session.name, res.session.credential || '', res.session.channel || channel);
         return;
       }
       if (authMode === 'forgot') {
@@ -300,8 +321,23 @@ export default function CoinHomePage() {
             ? 'Send reset link'
             : 'Update password';
 
+    const credentialHint =
+      channel === 'linkedin'
+        ? 'LinkedIn profile link'
+        : channel === 'whatsapp'
+          ? 'WhatsApp number'
+          : channel === 'imessage'
+            ? 'iMessage number'
+            : channel === 'discord'
+              ? 'Discord username'
+              : 'Email address';
+
     return (
-      <View style={styles.page}>
+      <ScrollView
+        style={styles.page}
+        contentContainerStyle={styles.authScroll}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.authCard}>
           <Image source={AVATAR} style={styles.authMark} />
           <Text style={styles.authBrand}>CIRCLE</Text>
@@ -342,24 +378,44 @@ export default function CoinHomePage() {
           ) : null}
 
           {authMode === 'signup' ? (
-            <TextInput
-              value={name}
-              onChangeText={setName}
-              placeholder="Full name"
-              placeholderTextColor="#64748B"
-              autoCapitalize="words"
-              style={styles.input}
-            />
+            <>
+              <View style={styles.nameRow}>
+                <TextInput
+                  value={firstName}
+                  onChangeText={setFirstName}
+                  placeholder="First name"
+                  placeholderTextColor="#64748B"
+                  autoCapitalize="words"
+                  style={[styles.input, styles.nameInput]}
+                />
+                <TextInput
+                  value={lastName}
+                  onChangeText={setLastName}
+                  placeholder="Last name"
+                  placeholderTextColor="#64748B"
+                  autoCapitalize="words"
+                  style={[styles.input, styles.nameInput]}
+                />
+              </View>
+              <TextInput
+                value={username}
+                onChangeText={setUsername}
+                placeholder="Username"
+                placeholderTextColor="#64748B"
+                autoCapitalize="none"
+                style={styles.input}
+              />
+            </>
           ) : null}
 
-          {authMode !== 'reset' ? (
+          {authMode === 'signin' || authMode === 'forgot' ? (
             <TextInput
               value={email}
               onChangeText={setEmail}
-              placeholder="Email"
+              placeholder={authMode === 'signin' ? 'Username' : 'Email'}
               placeholderTextColor="#64748B"
               autoCapitalize="none"
-              keyboardType="email-address"
+              keyboardType={authMode === 'forgot' ? 'email-address' : 'default'}
               style={styles.input}
             />
           ) : null}
@@ -383,8 +439,48 @@ export default function CoinHomePage() {
               placeholderTextColor="#64748B"
               secureTextEntry
               style={styles.input}
-              onSubmitEditing={submitAuth}
+              onSubmitEditing={authMode === 'signup' ? undefined : submitAuth}
             />
+          ) : null}
+
+          {authMode === 'signup' ? (
+            <>
+              <Text style={styles.fieldLabel}>How should people reach you?</Text>
+              <View style={styles.channelRow}>
+                {(
+                  [
+                    ['whatsapp', 'WhatsApp'],
+                    ['imessage', 'iMessage'],
+                    ['email', 'Email'],
+                    ['linkedin', 'LinkedIn'],
+                    ['discord', 'Discord'],
+                  ] as const
+                ).map(([key, label]) => (
+                  <Pressable
+                    key={key}
+                    onPress={() => setChannel(key)}
+                    style={[styles.channelPill, channel === key && styles.channelPillOn]}
+                  >
+                    <Text style={[styles.channelTxt, channel === key && styles.channelTxtOn]}>{label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+              <TextInput
+                value={credential}
+                onChangeText={setCredential}
+                placeholder={credentialHint}
+                placeholderTextColor="#64748B"
+                autoCapitalize="none"
+                keyboardType={
+                  channel === 'whatsapp' || channel === 'imessage'
+                    ? 'phone-pad'
+                    : channel === 'email'
+                      ? 'email-address'
+                      : 'default'
+                }
+                style={styles.input}
+              />
+            </>
           ) : null}
 
           {authError ? <Text style={styles.authError}>{authError}</Text> : null}
@@ -429,7 +525,7 @@ export default function CoinHomePage() {
             </Pressable>
           ) : null}
         </View>
-      </View>
+      </ScrollView>
     );
   }
 
@@ -817,9 +913,16 @@ const styles = StyleSheet.create({
   dotOn: { backgroundColor: '#22D3EE', width: 22 },
   skip: { marginTop: 18 },
   skipTxt: { color: '#64748B', fontWeight: '600', fontSize: 14 },
+  authScroll: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 36,
+    paddingHorizontal: 20,
+  },
   authCard: {
-    width: '90%',
-    maxWidth: 420,
+    width: '100%',
+    maxWidth: 480,
     backgroundColor: 'rgba(15,23,42,0.95)',
     borderWidth: 1,
     borderColor: 'rgba(148,163,184,0.2)',
@@ -868,6 +971,27 @@ const styles = StyleSheet.create({
   },
   authTabTxt: { color: '#64748B', fontWeight: '700', fontSize: 13 },
   authTabTxtOn: { color: '#22D3EE' },
+  nameRow: { flexDirection: 'row', gap: 10, alignSelf: 'stretch' },
+  nameInput: { flex: 1 },
+  fieldLabel: {
+    alignSelf: 'stretch',
+    color: '#94A3B8',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+    marginTop: 4,
+  },
+  channelRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignSelf: 'stretch' },
+  channelPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(148,163,184,0.28)',
+  },
+  channelPillOn: { borderColor: 'rgba(34,211,238,0.55)', backgroundColor: 'rgba(34,211,238,0.12)' },
+  channelTxt: { color: '#94A3B8', fontSize: 12, fontWeight: '700' },
+  channelTxtOn: { color: '#67E8F9' },
   input: {
     alignSelf: 'stretch',
     backgroundColor: 'rgba(2,6,23,0.9)',

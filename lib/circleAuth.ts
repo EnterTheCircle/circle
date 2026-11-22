@@ -10,10 +10,17 @@ const USERS_KEY = 'circle.auth.users.v1';
 const SESSION_KEY = 'circle.auth.session.v1';
 const RESETS_KEY = 'circle.auth.resets.v1';
 
+export type CircleChannel = 'whatsapp' | 'linkedin' | 'email' | 'imessage' | 'discord';
+
 export type CircleUser = {
   id: string;
   email: string;
   name: string;
+  username?: string;
+  firstName?: string;
+  lastName?: string;
+  channel?: CircleChannel;
+  credential?: string;
   passwordHash: string;
   createdAt: string;
 };
@@ -22,6 +29,9 @@ export type CircleSession = {
   userId: string;
   email: string;
   name: string;
+  username?: string;
+  channel?: CircleChannel;
+  credential?: string;
 };
 
 type ResetRecord = { email: string; token: string; expiresAt: number };
@@ -72,50 +82,97 @@ async function setSession(session: CircleSession | null) {
   else await AsyncStorage.removeItem(SESSION_KEY);
 }
 
+function checkCredential(channel: CircleChannel, raw: string): string | null {
+  const value = raw.trim();
+  if (channel === 'linkedin') {
+    if (!/^https?:\/\/.+/i.test(value) && !/linkedin\.com\//i.test(value)) {
+      return 'Paste a LinkedIn profile link.';
+    }
+    return null;
+  }
+  if (channel === 'whatsapp' || channel === 'imessage') {
+    if (value.replace(/[^\d]/g, '').length < 8) return 'Enter a phone number.';
+    return null;
+  }
+  if (channel === 'email') {
+    if (!value.includes('@') || value.length < 5) return 'Enter the email they should use.';
+    return null;
+  }
+  if (value.replace(/^@/, '').length < 2) return 'Enter a Discord username.';
+  return null;
+}
+
 export async function signUp(input: {
-  email: string;
+  firstName: string;
+  lastName: string;
+  username: string;
   password: string;
-  name: string;
+  channel: CircleChannel;
+  credential: string;
 }): Promise<{ ok: true; session: CircleSession } | { ok: false; error: string }> {
-  const email = input.email.trim().toLowerCase();
-  const name = input.name.trim();
+  const firstName = input.firstName.trim();
+  const lastName = input.lastName.trim();
+  const username = input.username.trim().toLowerCase().replace(/^@/, '');
   const password = input.password;
-  if (!email.includes('@') || email.length < 5) return { ok: false, error: 'Enter a valid email.' };
-  if (name.length < 2) return { ok: false, error: 'Enter your name.' };
+  const channel = input.channel;
+  const credential = input.credential.trim();
+  const name = `${firstName} ${lastName}`.trim();
+
+  if (firstName.length < 1 || lastName.length < 1) return { ok: false, error: 'Enter your first and last name.' };
+  if (!/^[a-z0-9._]{3,20}$/.test(username)) {
+    return { ok: false, error: 'Username is 3–20 letters, numbers, dots, or underscores.' };
+  }
   if (password.length < 6) return { ok: false, error: 'Password must be at least 6 characters.' };
+  const credentialError = checkCredential(channel, credential);
+  if (credentialError) return { ok: false, error: credentialError };
 
   const users = await loadUsers();
-  if (users.some((u) => u.email === email)) {
-    return { ok: false, error: 'An account with that email already exists. Sign in instead.' };
+  if (users.some((u) => (u.username || '').toLowerCase() === username || u.email === username)) {
+    return { ok: false, error: 'That username is taken.' };
   }
 
   const id = `u_${Date.now().toString(36)}`;
   const passwordHash = await hashPassword(password, id);
+  const email = channel === 'email' ? credential.toLowerCase() : `${username}@circle.local`;
   const user: CircleUser = {
     id,
     email,
     name,
+    username,
+    firstName,
+    lastName,
+    channel,
+    credential,
     passwordHash,
     createdAt: new Date().toISOString(),
   };
   users.push(user);
   await saveUsers(users);
-  const session = { userId: id, email, name };
+  const session: CircleSession = { userId: id, email, name, username, channel, credential };
   await setSession(session);
   return { ok: true, session };
 }
 
 export async function signIn(input: {
-  email: string;
+  username: string;
   password: string;
 }): Promise<{ ok: true; session: CircleSession } | { ok: false; error: string }> {
-  const email = input.email.trim().toLowerCase();
+  const key = input.username.trim().toLowerCase().replace(/^@/, '');
   const users = await loadUsers();
-  const user = users.find((u) => u.email === email);
-  if (!user) return { ok: false, error: 'Incorrect email or password.' };
+  const user = users.find(
+    (u) => (u.username || '').toLowerCase() === key || u.email.toLowerCase() === key
+  );
+  if (!user) return { ok: false, error: 'Incorrect username or password.' };
   const hash = await hashPassword(input.password, user.id);
-  if (hash !== user.passwordHash) return { ok: false, error: 'Incorrect email or password.' };
-  const session = { userId: user.id, email: user.email, name: user.name };
+  if (hash !== user.passwordHash) return { ok: false, error: 'Incorrect username or password.' };
+  const session: CircleSession = {
+    userId: user.id,
+    email: user.email,
+    name: user.name,
+    username: user.username,
+    channel: user.channel,
+    credential: user.credential,
+  };
   await setSession(session);
   return { ok: true, session };
 }

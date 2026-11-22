@@ -11,6 +11,7 @@ import { AppProvider, useApp } from '@/context/AppContext';
 import { Toast } from '@/components/ui';
 import { WebSidebar } from '@/components/web/WebSidebar';
 import { TourHost } from '@/components/web/TourHost';
+import { TOUR_STEPS } from '@/components/web/CircleGuide';
 import { Colors } from '@/constants/theme';
 
 export { ErrorBoundary } from 'expo-router';
@@ -120,7 +121,9 @@ function RootNavigator() {
   const showSidebar = Platform.OS === 'web' && hasSignedUp && hasCompletedHowTo;
 
   if (showSidebar) {
-    const target = tourMode === 'tour' ? (['circle', 'discover', 'add', 'introductions', 'profile'] as const)[tourStep] : undefined;
+    const stepId = tourMode === 'tour' ? TOUR_STEPS[tourStep]?.id : undefined;
+    const target =
+      stepId === 'ask' ? 'discover' : stepId === 'introductions' ? 'introductions' : stepId;
     return (
       <View style={{ flex: 1, flexDirection: 'row', backgroundColor: Colors.bg }}>
         <WebSidebar tourTarget={target} />

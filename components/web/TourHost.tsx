@@ -4,7 +4,13 @@ import { useRouter } from 'expo-router';
 import { TOUR_STEPS, TourOverlay, WelcomeOverlay } from '@/components/web/CircleGuide';
 import { useApp } from '@/context/AppContext';
 
-const TOPS = [188, 258, 0, 328, 398];
+const TOPS: Record<string, number> = {
+  circle: 188,
+  discover: 248,
+  ask: 248,
+  introductions: 328,
+  profile: 398,
+};
 
 /** Points the tour at Circle, Discover, Add, Introductions, and Profile. */
 export function TourHost() {
@@ -34,7 +40,7 @@ export function TourHost() {
 
   return (
     <View style={styles.layer} pointerEvents="box-none">
-      <View style={[styles.anchor, atBottom ? styles.bottom : { top: TOPS[tourStep] }]} pointerEvents="auto">
+      <View style={[styles.anchor, atBottom ? styles.bottom : { top: TOPS[step.id] ?? 240 }]} pointerEvents="auto">
         <View style={styles.arrow} />
         <TourOverlay
           step={tourStep}

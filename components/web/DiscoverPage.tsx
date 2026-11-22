@@ -10,9 +10,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Glyph } from '@/components/Glyph';
-import { Avatar, PrimaryButton } from '@/components/ui';
+import { PrimaryButton } from '@/components/ui';
 import {
-  ME,
   PEOPLE,
   Person,
   channelLabel,
@@ -181,70 +180,66 @@ function PersonPane({
   const profession = person.showProfession === false ? 'Profession hidden' : person.profession;
   const location = person.showLocation === false ? 'Location hidden' : person.location;
 
+  const pathLabel = ghost
+    ? 'Hidden'
+    : isDirect
+      ? 'You'
+      : mutual
+        ? `You → ${mutual.firstName}`
+        : 'Through your circle';
+
   return (
     <View style={styles.pane}>
-      {ghost ? (
-        <View style={[styles.panePhoto, styles.ghostPhotoLarge]}>
-          <Text style={styles.ghostMarkLarge}>?</Text>
-        </View>
-      ) : (
-        <Image source={{ uri: person.photo }} style={styles.panePhoto} />
-      )}
-      <Text style={[styles.paneName, ghost && styles.nameGhost]}>
-        {ghost ? 'Confidential' : person.name}
-      </Text>
-      <Text style={styles.paneMeta}>
-        {ghost ? 'Details hidden · ghost mode' : `${profession} · ${location}`}
-      </Text>
-      <Text style={styles.panePath}>
-        {isDirect
-          ? 'Your connections'
-          : `Through your circle · via ${person.via || mutual?.firstName}`}
-      </Text>
-      {!ghost && person.contactChannel ? (
-        <Text style={styles.prefers}>Prefers {channelLabel(person.contactChannel)}</Text>
-      ) : null}
-
-      <View style={styles.pathStrip}>
-        <Avatar initials={ME.initials} photo={ME.photo} color="#fff" size={32} />
-        <View style={styles.pathLine} />
-        {mutual ? (
-          <>
-            <Avatar initials={mutual.initials} photo={mutual.photo} color={mutual.color} size={32} />
-            <View style={styles.pathLine} />
-          </>
-        ) : null}
+      <View style={styles.paneHead}>
         {ghost ? (
-          <Avatar initials="?" color="#64748B" size={32} />
+          <View style={[styles.panePhoto, styles.ghostPhotoLarge]}>
+            <Text style={styles.ghostMarkLarge}>?</Text>
+          </View>
         ) : (
-          <Avatar initials={person.initials} photo={person.photo} color={person.color} size={32} />
+          <Image source={{ uri: person.photo }} style={styles.panePhoto} />
         )}
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={[styles.paneName, ghost && styles.nameGhost]} numberOfLines={2}>
+            {ghost ? 'Confidential' : person.name}
+          </Text>
+          <Text style={styles.paneMeta} numberOfLines={2}>
+            {ghost ? 'Details hidden' : `${profession}${location ? ` · ${location}` : ''}`}
+          </Text>
+          {!ghost && person.contactChannel ? (
+            <Text style={styles.prefers}>Prefers {channelLabel(person.contactChannel)}</Text>
+          ) : null}
+        </View>
+      </View>
+
+      <View style={styles.pathChip}>
+        <Text style={styles.pathChipTxt}>{pathLabel}</Text>
       </View>
 
       <Text style={styles.bio}>
         {ghost
-          ? `This person is ghosted to 2nd circle. Ask ${mutual?.firstName || 'your mutual'} for an introduction to learn more.`
+          ? `Ask ${mutual?.firstName || 'your mutual'} for an introduction. You can track it under Introductions.`
           : person.bio}
       </Text>
 
-      <View style={{ gap: 8, marginTop: 18 }}>
+      <View style={styles.paneActions}>
         {isDirect ? (
-          <PrimaryButton title="Message in their app" onPress={() => onMessage(person)} />
+          <PrimaryButton title="Message" onPress={() => onMessage(person)} />
         ) : (
           <PrimaryButton
-            title={mutual ? `Ask ${mutual.firstName} for an intro` : 'Ask for intro'}
+            title={mutual ? `Ask ${mutual.firstName}` : 'Ask for intro'}
             onPress={() => onAsk(person)}
           />
         )}
         {!ghost ? (
-          <>
-            <PrimaryButton title="View profile" variant="ghost" onPress={onProfile} />
+          <View style={styles.paneRow}>
+            <PrimaryButton title="Profile" variant="ghost" onPress={onProfile} style={{ flex: 1 }} />
             <PrimaryButton
-              title={saved ? 'Saved' : 'Save for later'}
+              title={saved ? 'Saved' : 'Save'}
               variant="secondary"
               onPress={() => onSave(person.id)}
+              style={{ flex: 1 }}
             />
-          </>
+          </View>
         ) : null}
       </View>
     </View>
@@ -281,7 +276,7 @@ const styles = StyleSheet.create({
     maxWidth: 720,
   },
   searchInput: { flex: 1, color: Colors.text, fontSize: 16, paddingVertical: 14 },
-  body: { flex: 1, flexDirection: 'row', gap: 24, marginTop: 24, minHeight: 0 },
+  body: { flex: 1, flexDirection: 'row', gap: 20, marginTop: 20, minHeight: 0, alignItems: 'flex-start' },
   gridWrap: { flex: 1 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, paddingBottom: 40 },
   card: {
@@ -324,19 +319,31 @@ const styles = StyleSheet.create({
   path: { color: Colors.accent, fontSize: 11, fontWeight: '600', marginTop: 6 },
   empty: { color: Colors.textMuted, marginTop: 24 },
   pane: {
-    width: 320,
-    backgroundColor: Colors.bgCard,
-    borderRadius: Radii.xl,
+    width: 340,
+    backgroundColor: '#101018',
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: Colors.borderStrong,
-    padding: 22,
+    borderColor: 'rgba(167,139,250,0.28)',
+    padding: 18,
+    alignSelf: 'flex-start',
   },
-  panePhoto: { width: 88, height: 88, borderRadius: 44, marginBottom: 14 },
-  paneName: { color: Colors.text, fontSize: 22, fontWeight: '800' },
-  paneMeta: { color: Colors.textSecondary, marginTop: 6, fontSize: 14 },
-  panePath: { color: Colors.accent, marginTop: 8, fontWeight: '600' },
+  paneHead: { flexDirection: 'row', gap: 14, alignItems: 'center' },
+  panePhoto: { width: 64, height: 64, borderRadius: 32 },
+  paneName: { color: Colors.text, fontSize: 18, fontWeight: '800', letterSpacing: -0.3 },
+  paneMeta: { color: Colors.textSecondary, marginTop: 4, fontSize: 13, lineHeight: 18 },
   prefers: { color: Colors.textMuted, marginTop: 4, fontSize: 12 },
-  pathStrip: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16 },
-  pathLine: { width: 22, height: 1, backgroundColor: Colors.accent + '88' },
-  bio: { color: Colors.textSecondary, marginTop: 16, lineHeight: 21, fontSize: 14 },
+  pathChip: {
+    alignSelf: 'flex-start',
+    marginTop: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    backgroundColor: 'rgba(167,139,250,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(167,139,250,0.28)',
+  },
+  pathChipTxt: { color: '#C4B5FD', fontSize: 12, fontWeight: '700' },
+  bio: { color: Colors.textSecondary, marginTop: 12, lineHeight: 20, fontSize: 14 },
+  paneActions: { gap: 8, marginTop: 16 },
+  paneRow: { flexDirection: 'row', gap: 8 },
 });

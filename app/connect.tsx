@@ -76,14 +76,16 @@ export default function ConnectScreen() {
     <ScrollView
       style={styles.screen}
       contentContainerStyle={{
-        paddingTop: insets.top + 18,
-        paddingBottom: insets.bottom + 28,
-        paddingHorizontal: web ? 28 : Spacing.lg,
+        paddingTop: insets.top + 28,
+        paddingBottom: insets.bottom + 40,
+        paddingHorizontal: web ? 32 : Spacing.lg,
+        alignItems: 'center',
       }}
     >
       <Pressable style={styles.close} onPress={() => router.back()}>
         <Glyph name="close" size={18} color={Colors.textSecondary} />
       </Pressable>
+      <View style={styles.canvas}>
       <Text style={styles.kicker}>Add</Text>
       <Text style={styles.title}>Your word is your identifier.</Text>
       <Text style={styles.subtitle}>
@@ -150,25 +152,28 @@ export default function ConnectScreen() {
         </View>
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Daily link</Text>
-        <Text style={styles.cardDesc}>Anyone with this link can ask to join you. It changes every day.</Text>
-        <Text style={styles.link} selectable>
-          {link || 'Preparing your link…'}
-        </Text>
-        <PrimaryButton title="Copy link" variant="secondary" onPress={() => void copyLink()} />
-      </View>
+      <View style={web ? styles.columns : undefined}>
+        <View style={[styles.card, web && styles.col]}>
+          <Text style={styles.cardTitle}>Daily link</Text>
+          <Text style={styles.cardDesc}>Anyone with this link can ask to join you. It changes every day.</Text>
+          <Text style={styles.link} selectable>
+            {link || 'Preparing your link…'}
+          </Text>
+          <PrimaryButton title="Copy link" variant="secondary" onPress={() => void copyLink()} />
+        </View>
 
-      <View style={[styles.card, web && styles.disabled]}>
-        <Text style={styles.cardTitle}>Tap to add</Text>
-        <Text style={styles.cardDesc}>
-          Stand next to someone and tap phones. This only works in the phone app.
-        </Text>
-        {web ? (
-          <Text style={styles.phoneOnly}>Phone only</Text>
-        ) : (
-          <PrimaryButton title="Find nearby people" onPress={() => router.push('/connect-nearby')} />
-        )}
+        <View style={[styles.card, web && styles.col, web && styles.disabled]}>
+          <Text style={styles.cardTitle}>Tap to add</Text>
+          <Text style={styles.cardDesc}>
+            Stand next to someone and tap phones. This only works in the phone app.
+          </Text>
+          {web ? (
+            <Text style={styles.phoneOnly}>Phone only</Text>
+          ) : (
+            <PrimaryButton title="Find nearby people" onPress={() => router.push('/connect-nearby')} />
+          )}
+        </View>
+      </View>
       </View>
     </ScrollView>
   );
@@ -176,6 +181,7 @@ export default function ConnectScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.bg },
+  canvas: { width: '100%', maxWidth: 1040 },
   close: { position: 'absolute', right: 18, top: 16, zIndex: 2, padding: 8 },
   kicker: {
     color: Colors.accent,
@@ -193,14 +199,13 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(167,139,250,0.35)',
     padding: 22,
     marginBottom: 16,
-    maxWidth: 720,
   },
   wordLabel: { color: Colors.textMuted, fontSize: 12, fontWeight: '700', letterSpacing: 0.6 },
   word: { color: '#fff', fontSize: 40, fontWeight: '800', letterSpacing: -0.8, marginTop: 6 },
   track: { height: 4, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.08)', marginTop: 16, overflow: 'hidden' },
   fill: { height: 4, backgroundColor: '#A78BFA' },
   countdown: { color: '#C4B5FD', marginTop: 8, fontWeight: '700', fontSize: 13 },
-  columns: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', maxWidth: 720 },
+  columns: { flexDirection: 'row', gap: 14, alignItems: 'stretch' },
   col: { flex: 1 },
   card: {
     backgroundColor: Colors.bgCard,
@@ -208,8 +213,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
     padding: Spacing.lg,
-    marginBottom: 12,
-    maxWidth: 720,
+    marginBottom: 14,
   },
   disabled: { opacity: 0.45 },
   cardTitle: { color: Colors.text, fontSize: 16, fontWeight: '800' },
