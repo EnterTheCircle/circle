@@ -49,6 +49,7 @@ function AppStack() {
       }}
     >
       {/* Public marketing — always available */}
+      <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="about" options={{ headerShown: false }} />
       <Stack.Screen name="tokenomics" options={{ headerShown: false }} />
       <Stack.Screen name="circle-token" options={{ headerShown: false }} />
@@ -131,20 +132,18 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
+  // Load icon fonts in the background — never block the whole app on web.
+  // A stuck useFonts() was rendering a permanent blank screen on GitHub Pages.
   const [fontsReady] = useFonts({
     ...Ionicons.font,
   });
-
-  if (!fontsReady) {
-    return <View style={{ flex: 1, backgroundColor: Colors.bg }} />;
-  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AppProvider>
         <View style={{ flex: 1, backgroundColor: Colors.bg }}>
           <StatusBar style="light" />
-          <SplashController fontsReady={fontsReady} />
+          <SplashController fontsReady={fontsReady || Platform.OS === 'web'} />
           <RootNavigator />
           <ToastHost />
         </View>
