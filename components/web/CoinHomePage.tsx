@@ -573,17 +573,6 @@ export default function CoinHomePage() {
             <Image source={AVATAR} style={styles.topMark} />
             <Text style={styles.topWord}>CIRCLE</Text>
           </View>
-          <View style={styles.landingNav}>
-            <Pressable onPress={() => router.push('/about')} style={styles.navLink}>
-              <Text style={styles.navLinkTxt}>About</Text>
-            </Pressable>
-            <Pressable onPress={() => router.push('/tokenomics')} style={styles.navLink}>
-              <Text style={styles.navLinkTxt}>Tokenomics</Text>
-            </Pressable>
-            <Pressable onPress={() => router.push('/circle-token')} style={styles.navLink}>
-              <Text style={[styles.navLinkTxt, styles.navLinkAccent]}>$CIRCLE</Text>
-            </Pressable>
-          </View>
         </View>
 
         <View style={styles.heroCopy}>
@@ -593,6 +582,27 @@ export default function CoinHomePage() {
         </View>
 
         <View style={styles.landingBottom}>
+          <View style={styles.landingNav}>
+            <Pressable
+              onPress={() => router.push('/about')}
+              style={({ pressed }) => [styles.navItem, pressed && styles.navItemPressed]}
+            >
+              <Text style={styles.navItemTxt}>About</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => router.push('/tokenomics')}
+              style={({ pressed }) => [styles.navItem, pressed && styles.navItemPressed]}
+            >
+              <Text style={styles.navItemTxt}>Tokenomics</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => router.push('/circle-token')}
+              style={({ pressed }) => [styles.navItem, styles.navItemAccent, pressed && styles.navItemPressed]}
+            >
+              <Text style={[styles.navItemTxt, styles.navItemTxtAccent]}>$CIRCLE</Text>
+            </Pressable>
+          </View>
+
           <Pressable
             onPress={startEnter}
             style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
@@ -811,42 +821,51 @@ const styles = StyleSheet.create({
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     width: '100%',
     maxWidth: 1080,
     alignSelf: 'center',
   },
   topBrand: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  topMark: { width: 28, height: 28, borderRadius: 14 },
+  topMark: { width: 32, height: 32, borderRadius: 16 },
   topWord: {
     color: '#F8FAFC',
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: '800',
-    letterSpacing: 3.2,
+    letterSpacing: 3.4,
   },
   landingNav: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 22,
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 6,
   },
-  navLink: { paddingVertical: 8 },
-  navLinkTxt: {
-    color: 'rgba(226,232,240,0.62)',
-    fontSize: 13,
-    fontWeight: '500',
-    letterSpacing: 0.3,
+  navItem: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    minWidth: 120,
+    alignItems: 'center',
   },
-  navLinkAccent: { color: '#67E8F9', fontWeight: '700' },
+  navItemAccent: {},
+  navItemPressed: { opacity: 0.75 },
+  navItemTxt: {
+    color: '#E2E8F0',
+    fontSize: 16,
+    fontWeight: '600',
+    letterSpacing: 0.4,
+  },
+  navItemTxtAccent: { color: '#67E8F9', fontWeight: '700' },
   heroCopy: {
     alignItems: 'center',
-    marginTop: -40,
+    marginTop: -24,
   },
-  landingBottom: { alignItems: 'center', gap: 18 },
-  demoBtn: { paddingVertical: 6, paddingHorizontal: 12 },
+  landingBottom: { alignItems: 'center', gap: 14 },
+  demoBtn: { paddingVertical: 8, paddingHorizontal: 12 },
   demoTxt: {
-    color: 'rgba(203,213,225,0.72)',
-    fontSize: 14,
-    fontWeight: '500',
+    color: '#CBD5E1',
+    fontSize: 15,
+    fontWeight: '600',
     letterSpacing: 0.15,
   },
   brand: {
@@ -854,22 +873,22 @@ const styles = StyleSheet.create({
     fontSize: 64,
     fontWeight: '200',
     letterSpacing: 18,
-    marginBottom: 20,
+    marginBottom: 18,
     textAlign: 'center',
   },
   line: {
-    color: 'rgba(248,250,252,0.92)',
-    fontSize: 20,
+    color: '#F8FAFC',
+    fontSize: 21,
     textAlign: 'center',
-    lineHeight: 30,
+    lineHeight: 32,
     fontWeight: '500',
     letterSpacing: 0.2,
   },
   lineSecondary: {
-    color: 'rgba(148,163,184,0.95)',
-    fontSize: 20,
+    color: '#E2E8F0',
+    fontSize: 21,
     textAlign: 'center',
-    lineHeight: 30,
+    lineHeight: 32,
     fontWeight: '400',
     letterSpacing: 0.2,
     marginTop: 2,
