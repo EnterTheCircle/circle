@@ -24,9 +24,11 @@ import {
 import { Colors, Radii } from '@/constants/theme';
 import { avatarSource } from '@/lib/avatars';
 import { useApp } from '@/context/AppContext';
+import { useIsNarrowWeb } from '@/lib/useWebLayout';
 
 export default function DiscoverWeb() {
   const router = useRouter();
+  const narrow = useIsNarrowWeb();
   const { requestIntro, rememberPerson, isSaved, showToast, profile, networkFirst, networkSecond, demoMode } =
     useApp();
   const [query, setQuery] = useState('');
@@ -75,11 +77,11 @@ export default function DiscoverWeb() {
   const detail = selected && results.find((p) => p.id === selected.id) ? selected : results[0];
 
   return (
-    <View style={styles.page}>
-      <View style={styles.top}>
+    <View style={[styles.page, narrow && styles.pageNarrow]}>
+      <View style={[styles.top, narrow && styles.topNarrow]}>
         <View style={{ flex: 1 }}>
           <Text style={styles.kicker}>1st & 2nd circle only</Text>
-          <Text style={styles.title}>Discover</Text>
+          <Text style={[styles.title, narrow && styles.titleNarrow]}>Discover</Text>
           <Text style={styles.sub}>
             {demoMode
               ? 'Sample circle — try lawyer, stylist, founder.'
@@ -119,8 +121,8 @@ export default function DiscoverWeb() {
         ) : null}
       </View>
 
-      <View style={styles.body}>
-        <ScrollView style={styles.gridWrap} contentContainerStyle={styles.grid}>
+      <View style={[styles.body, narrow && styles.bodyNarrow]}>
+        <ScrollView style={styles.gridWrap} contentContainerStyle={[styles.grid, narrow && styles.gridNarrow]}>
           {results.map((person) => {
             const active = detail?.id === person.id;
             const ghost = isGhostToSecond(person);
@@ -132,6 +134,7 @@ export default function DiscoverWeb() {
                 onPress={() => setSelected(person)}
                 style={[
                   styles.card,
+                  narrow && styles.cardNarrow,
                   person.degree === 1 ? styles.cardDirect : styles.cardThrough,
                   active && styles.cardActive,
                 ]}
@@ -160,7 +163,17 @@ export default function DiscoverWeb() {
           ) : null}
         </ScrollView>
 
-        {detail ? <PersonPane person={detail} onAsk={askForIntro} onMessage={messageViaPreferred} onSave={rememberPerson} saved={isSaved(detail.id)} onProfile={() => router.push(`/person/${detail.id}`)} /> : null}
+        {detail ? (
+          <PersonPane
+            person={detail}
+            narrow={narrow}
+            onAsk={askForIntro}
+            onMessage={messageViaPreferred}
+            onSave={rememberPerson}
+            saved={isSaved(detail.id)}
+            onProfile={() => router.push(`/person/${detail.id}`)}
+          />
+        ) : null}
       </View>
     </View>
   );
@@ -168,6 +181,7 @@ export default function DiscoverWeb() {
 
 function PersonPane({
   person,
+  narrow,
   onAsk,
   onMessage,
   onSave,
@@ -175,6 +189,7 @@ function PersonPane({
   onProfile,
 }: {
   person: Person;
+  narrow?: boolean;
   onAsk: (p: Person) => void;
   onMessage: (p: Person) => void;
   onSave: (id: string) => void;
@@ -196,7 +211,7 @@ function PersonPane({
         : 'Through your circle';
 
   return (
-    <View style={styles.pane}>
+    <View style={[styles.pane, narrow && styles.paneNarrow]}>
       <View style={styles.paneHead}>
         {ghost || isConfidential(person) ? (
           <View style={[styles.panePhoto, styles.ghostPhotoLarge]}>
@@ -259,9 +274,12 @@ function PersonPane({
 
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: Colors.bg, paddingHorizontal: 40, paddingTop: 32, paddingBottom: 24 },
+  pageNarrow: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 96 },
   top: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 22 },
+  topNarrow: { flexWrap: 'wrap', gap: 12 },
   kicker: { color: Colors.accent, fontSize: 12, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' },
   title: { color: Colors.text, fontSize: 36, fontWeight: '800', marginTop: 6, letterSpacing: -0.8 },
+  titleNarrow: { fontSize: 28 },
   sub: { color: Colors.textMuted, marginTop: 8, fontSize: 15, maxWidth: 520, lineHeight: 22 },
   saved: {
     flexDirection: 'row',
@@ -288,8 +306,10 @@ const styles = StyleSheet.create({
   },
   searchInput: { flex: 1, color: Colors.text, fontSize: 16, paddingVertical: 14 },
   body: { flex: 1, flexDirection: 'row', gap: 20, marginTop: 20, minHeight: 0, alignItems: 'flex-start' },
+  bodyNarrow: { flexDirection: 'column', gap: 14 },
   gridWrap: { flex: 1 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, paddingBottom: 40 },
+  gridNarrow: { paddingBottom: 16 },
   card: {
     width: 180,
     backgroundColor: Colors.bgCard,
@@ -298,6 +318,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     padding: 14,
   },
+  cardNarrow: { width: '47%' as unknown as number, minWidth: 140, flexGrow: 1 },
   cardDirect: {
     backgroundColor: 'rgba(34,211,238,0.05)',
     borderColor: 'rgba(34,211,238,0.18)',
@@ -338,6 +359,7 @@ const styles = StyleSheet.create({
     padding: 18,
     alignSelf: 'flex-start',
   },
+  paneNarrow: { width: '100%', alignSelf: 'stretch' },
   paneHead: { flexDirection: 'row', gap: 14, alignItems: 'center' },
   panePhoto: { width: 64, height: 64, borderRadius: 32 },
   paneName: { color: Colors.text, fontSize: 18, fontWeight: '800', letterSpacing: -0.3 },

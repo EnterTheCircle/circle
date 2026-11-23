@@ -3,9 +3,13 @@ import { Platform, View } from 'react-native';
 import { Slot, Tabs } from 'expo-router';
 import { FloatingTabBar } from '@/components/FloatingTabBar';
 import { Colors } from '@/constants/theme';
+import { useIsNarrowWeb } from '@/lib/useWebLayout';
 
 export default function TabLayout() {
-  if (Platform.OS === 'web') {
+  const narrowWeb = useIsNarrowWeb();
+
+  // Wide web: sidebar in root layout; tab screens just fill the content pane.
+  if (Platform.OS === 'web' && !narrowWeb) {
     return (
       <View style={{ flex: 1, backgroundColor: Colors.bg }}>
         <Slot />
@@ -13,6 +17,7 @@ export default function TabLayout() {
     );
   }
 
+  // Native + phone web: floating bottom tabs.
   return (
     <Tabs
       tabBar={() => <FloatingTabBar />}

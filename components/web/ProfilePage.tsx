@@ -7,6 +7,7 @@ import { NETWORK_STATS, channelLabel, defaultAvatar, initialsFromName } from '@/
 import { First10kMedal } from '@/components/First10kMedal';
 import { Colors, Radii } from '@/constants/theme';
 import { useApp } from '@/context/AppContext';
+import { useIsNarrowWeb } from '@/lib/useWebLayout';
 
 function pickPhotoFile(onPicked: (dataUrl: string) => void) {
   if (Platform.OS !== 'web' || typeof document === 'undefined') return;
@@ -27,16 +28,20 @@ function pickPhotoFile(onPicked: (dataUrl: string) => void) {
 
 export default function ProfileWeb() {
   const router = useRouter();
+  const narrow = useIsNarrowWeb();
   const { profile, saved, account, updateProfile, showToast } = useApp();
   const initials = initialsFromName(profile.name);
 
   return (
-    <ScrollView style={styles.page} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.page}
+      contentContainerStyle={[styles.content, narrow && styles.contentNarrow]}
+    >
       <Text style={styles.kicker}>Account</Text>
-      <Text style={styles.title}>Profile</Text>
+      <Text style={[styles.title, narrow && styles.titleNarrow]}>Profile</Text>
 
-      <View style={styles.layout}>
-        <View style={styles.hero}>
+      <View style={[styles.layout, narrow && styles.layoutNarrow]}>
+        <View style={[styles.hero, narrow && styles.heroNarrow]}>
           <Pressable
             onPress={() =>
               pickPhotoFile((uri) => {
@@ -145,9 +150,12 @@ function MenuItem({
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: Colors.bg },
   content: { paddingHorizontal: 40, paddingTop: 32, paddingBottom: 48 },
+  contentNarrow: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 110 },
   kicker: { color: Colors.accent, fontSize: 12, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' },
   title: { color: Colors.text, fontSize: 36, fontWeight: '800', marginTop: 6, letterSpacing: -0.8, marginBottom: 28 },
+  titleNarrow: { fontSize: 28, marginBottom: 18 },
   layout: { flexDirection: 'row', gap: 32, alignItems: 'flex-start' },
+  layoutNarrow: { flexDirection: 'column', gap: 20 },
   hero: {
     width: 380,
     backgroundColor: Colors.bgCard,
@@ -157,6 +165,7 @@ const styles = StyleSheet.create({
     padding: 28,
     alignItems: 'center',
   },
+  heroNarrow: { width: '100%' },
   avatarWrap: { position: 'relative' },
   cameraBadge: {
     position: 'absolute',

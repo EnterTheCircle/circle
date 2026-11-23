@@ -7,12 +7,14 @@ import { Platform, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppProvider, useApp } from '@/context/AppContext';
 import { Toast } from '@/components/ui';
 import { WebSidebar } from '@/components/web/WebSidebar';
 import { TourHost } from '@/components/web/TourHost';
 import { TOUR_STEPS } from '@/components/web/CircleGuide';
 import { Colors } from '@/constants/theme';
+import { useIsNarrowWeb } from '@/lib/useWebLayout';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -129,12 +131,14 @@ function VisitTracker() {
 
 function RootNavigator() {
   const { onboardingReady, hasSignedUp, hasCompletedHowTo, tourMode, tourStep } = useApp();
+  const narrowWeb = useIsNarrowWeb();
 
   if (!onboardingReady) {
     return <View style={{ flex: 1, backgroundColor: Colors.bg }} />;
   }
 
-  const showSidebar = Platform.OS === 'web' && hasSignedUp && hasCompletedHowTo;
+  // Desktop web only — phones get bottom tabs instead of the 260px rail.
+  const showSidebar = Platform.OS === 'web' && !narrowWeb && hasSignedUp && hasCompletedHowTo;
 
   if (showSidebar) {
     const stepId = tourMode === 'tour' ? TOUR_STEPS[tourStep]?.id : undefined;
@@ -168,16 +172,18 @@ export default function RootLayout() {
   });
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <AppProvider>
-        <View style={{ flex: 1, backgroundColor: Colors.bg }}>
-          <StatusBar style="light" />
-          <SplashController fontsReady={fontsReady || Platform.OS === 'web'} />
-          <VisitTracker />
-          <RootNavigator />
-          <ToastHost />
-        </View>
-      </AppProvider>
-    </GestureHandlerRootView>
+    <SafeAreaProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <AppProvider>
+          <View style={{ flex: 1, backgroundColor: Colors.bg }}>
+            <StatusBar style="light" />
+            <SplashController fontsReady={fontsReady || Platform.OS === 'web'} />
+            <VisitTracker />
+            <RootNavigator />
+            <ToastHost />
+          </View>
+        </AppProvider>
+      </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
 }

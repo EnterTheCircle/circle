@@ -10,6 +10,7 @@ import {
 } from '@/constants/mockData';
 import { Colors, Radii } from '@/constants/theme';
 import { useApp } from '@/context/AppContext';
+import { useIsNarrowWeb } from '@/lib/useWebLayout';
 
 function headline(item: IntroRequest, tab: 'received' | 'sent') {
   if (item.kind === 'offer_help') {
@@ -39,6 +40,7 @@ function statusLabel(item: IntroRequest) {
 }
 
 export default function IntroductionsWeb() {
+  const narrow = useIsNarrowWeb();
   const router = useRouter();
   const { intros, respondIntro, showToast, profile, refreshIntros, demoMode } = useApp();
   const [tab, setTab] = useState<'received' | 'sent'>('received');
@@ -67,9 +69,9 @@ export default function IntroductionsWeb() {
   };
 
   return (
-    <View style={styles.page}>
+    <View style={[styles.page, narrow && styles.pageNarrow]}>
       <Text style={styles.kicker}>Warm handoffs</Text>
-      <Text style={styles.title}>Introductions</Text>
+      <Text style={[styles.title, narrow && styles.titleNarrow]}>Introductions</Text>
       <Text style={styles.sub}>
         Approve in Circle. Sharing a preferred contact is not the same as joining someone’s 1st
         circle.
@@ -190,8 +192,10 @@ export default function IntroductionsWeb() {
 
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: Colors.bg, paddingHorizontal: 40, paddingTop: 32 },
+  pageNarrow: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 96 },
   kicker: { color: Colors.accent, fontSize: 12, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' },
   title: { color: Colors.text, fontSize: 36, fontWeight: '800', marginTop: 6, letterSpacing: -0.8 },
+  titleNarrow: { fontSize: 28 },
   sub: { color: Colors.textMuted, marginTop: 8, fontSize: 15, marginBottom: 20, maxWidth: 560, lineHeight: 22 },
   tabs: {
     flexDirection: 'row',

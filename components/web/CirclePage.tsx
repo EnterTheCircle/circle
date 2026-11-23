@@ -1,5 +1,13 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { LayoutChangeEvent, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  LayoutChangeEvent,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { Glyph } from '@/components/Glyph';
 import { First10kMedal } from '@/components/First10kMedal';
@@ -22,6 +30,7 @@ import {
 } from '@/constants/mockData';
 import { Colors, Radii } from '@/constants/theme';
 import { useApp } from '@/context/AppContext';
+import { useIsNarrowWeb } from '@/lib/useWebLayout';
 
 const FILTERS: { key: DegreeFilter; label: string }[] = [
   { key: 1, label: 'Yours' },
@@ -36,6 +45,8 @@ function clampZoom(z: number) {
 
 export default function CircleWeb() {
   const router = useRouter();
+  const { width: viewportW } = useWindowDimensions();
+  const narrow = useIsNarrowWeb();
   const {
     unreadCount,
     isSaved,
@@ -53,7 +64,7 @@ export default function CircleWeb() {
   const [zoom, setZoom] = useState(WEB_ZOOM_FOR_DEGREE[3]);
   const [focusId, setFocusId] = useState('me');
   const [preview, setPreview] = useState<Person | null>(null);
-  const [globeSize, setGlobeSize] = useState(720);
+  const [globeSize, setGlobeSize] = useState(() => Math.min(Math.max(viewportW - 32, 240), 720));
   const [helpOpen, setHelpOpen] = useState(false);
 
   const maxDegree = filterToMaxDegree(filter);
@@ -91,9 +102,10 @@ export default function CircleWeb() {
 
   const onGlobeAreaLayout = (e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
-    // Fill nearly the whole stage — only leave a slim strip for the toolbar
-    const next = Math.floor(Math.min(width + 24, height - 56));
-    if (next > 360 && Math.abs(next - globeSize) > 8) setGlobeSize(next);
+    // Fit the available stage — no 360px floor (that locked phones at 720).
+    const next = Math.floor(Math.min(width, Math.max(height - (narrow ? 72 : 56), 200)));
+    const clamped = Math.max(220, Math.min(next, 720));
+    if (Math.abs(clamped - globeSize) > 8) setGlobeSize(clamped);
   };
 
   const people = useMemo(() => {
@@ -109,33 +121,35 @@ export default function CircleWeb() {
   const focus = focusId === 'me' ? mePerson : getPerson(focusId);
 
   return (
-    <View style={styles.page}>
+    <View style={[styles.page, narrow && styles.pageNarrow]}>
       <View style={styles.topBar}>
         <View style={styles.statsWrap}>
-          <View style={styles.statsRow}>
+          <View style={[styles.statsRow, narrow && styles.statsRowNarrow]}>
             <View style={styles.stat}>
-              <Text style={styles.statNum}>{networkFirst.length || activeCircle().length}</Text>
+              <Text style={[styles.statNum, narrow && styles.statNumNarrow]}>
+                {networkFirst.length || activeCircle().length}
+              </Text>
               <Text style={styles.statLbl}>Direct</Text>
             </View>
             <View style={styles.statRule} />
             <View style={styles.stat}>
-              <Text style={styles.statNum}>
+              <Text style={[styles.statNum, narrow && styles.statNumNarrow]}>
                 {isAppFounder ? 0 : networkSecond.length || reachThroughCircle().length}
               </Text>
               <Text style={styles.statLbl}>In reach</Text>
             </View>
-            <Pressable style={styles.help} onPress={() => void refreshNetwork()}>
+            <Pressable style={[styles.help, narrow && styles.helpNarrow]} onPress={() => void refreshNetwork()}>
               <Text style={styles.helpMark}>↻</Text>
             </Pressable>
             <Pressable
-              style={[styles.help, helpOpen && styles.helpOn]}
+              style={[styles.help, narrow && styles.helpNarrow, helpOpen && styles.helpOn]}
               onPress={() => setHelpOpen((v) => !v)}
             >
               <Text style={styles.helpMark}>?</Text>
             </Pressable>
           </View>
           {helpOpen ? (
-            <View style={styles.tip}>
+            <View style={[styles.tip, narrow && styles.tipNarrow]}>
               <Text style={styles.tipTitle}>How to read this</Text>
               <Text style={styles.tipBody}>
                 Direct is people in your circle. In reach is everyone you can meet through them. The center is you. Inner ring is yours, the next ring is second circle.
@@ -162,9 +176,9 @@ export default function CircleWeb() {
         </Pressable>
       </View>
 
-      <View style={styles.body}>
-        <View style={styles.globeCol} onLayout={onGlobeAreaLayout}>
-          <View style={styles.globeStage}>
+      <View style={[styles.body, narrow && styles.bodyNarrow]}>
+        <View style={[styles.globeCol, narrow && styles.globeColNarrow]} onLayout={onGlobeAreaLayout}>
+          <View style={[styles.globeStage, narrow && styles.globeStageNarrow]}>
             <NetworkGlobe
               size={globeSize}
               maxDegree={maxDegree}
@@ -221,7 +235,7 @@ export default function CircleWeb() {
           </View>
         </View>
 
-        <View style={styles.side}>
+        <View style={[styles.side, narrow && styles.sideNarrow]}>
           {preview ? (
             <View style={styles.preview}>
               <Pressable onPress={() => setPreview(null)} style={styles.backRow}>
@@ -418,13 +432,14 @@ export default function CircleWeb() {
 
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: Colors.bg, paddingLeft: 20, paddingRight: 24, paddingTop: 16, paddingBottom: 12 },
+  pageNarrow: { paddingLeft: 12, paddingRight: 12, paddingTop: 10, paddingBottom: 88 },
   topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
   },
-  statsWrap: { position: 'relative', zIndex: 5 },
+  statsWrap: { position: 'relative', zIndex: 5, flexShrink: 1 },
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -437,9 +452,11 @@ const styles = StyleSheet.create({
     paddingRight: 8,
     paddingVertical: 8,
   },
-  stat: { alignItems: 'flex-start', minWidth: 64 },
+  statsRowNarrow: { gap: 10, paddingLeft: 12, paddingRight: 6, paddingVertical: 6 },
+  stat: { alignItems: 'flex-start', minWidth: 48 },
   statRule: { width: 1, alignSelf: 'stretch', backgroundColor: 'rgba(255,255,255,0.08)' },
   statNum: { color: '#fff', fontSize: 20, fontWeight: '800', letterSpacing: -0.4, lineHeight: 22 },
+  statNumNarrow: { fontSize: 17 },
   statLbl: {
     color: Colors.textMuted,
     fontSize: 11,
@@ -457,6 +474,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginLeft: 4,
   },
+  helpNarrow: { width: 36, height: 36, borderRadius: 18 },
   helpOn: { backgroundColor: 'rgba(167,139,250,0.18)' },
   helpMark: { color: '#C4B5FD', fontSize: 15, fontWeight: '800' },
   tip: {
@@ -471,19 +489,21 @@ const styles = StyleSheet.create({
     padding: 14,
     zIndex: 80,
   },
+  tipNarrow: { width: undefined, right: 0, maxWidth: '92%' as unknown as number },
   tipBtn: { marginTop: 12, alignSelf: 'flex-start' },
   tipTitle: { color: '#fff', fontWeight: '800', fontSize: 13, marginBottom: 6 },
   tipBody: { color: Colors.textSecondary, fontSize: 13, lineHeight: 19 },
   tipLink: { color: '#67E8F9', fontWeight: '700', fontSize: 13 },
   bell: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     borderWidth: 1,
     borderColor: 'rgba(167,139,250,0.35)',
     backgroundColor: 'rgba(12,12,22,0.92)',
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   dot: {
     position: 'absolute',
@@ -499,20 +519,23 @@ const styles = StyleSheet.create({
   },
   dotText: { color: '#fff', fontSize: 10, fontWeight: '800' },
   body: { flex: 1, flexDirection: 'row', gap: 16, minHeight: 0 },
+  bodyNarrow: { flexDirection: 'column', gap: 10 },
   globeCol: {
     flex: 1,
     minWidth: 0,
     minHeight: 0,
     justifyContent: 'space-between',
   },
+  globeColNarrow: { flexGrow: 0, flexBasis: 'auto', minHeight: 280 },
   globeStage: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingTop: 4,
     minHeight: 0,
-    overflow: 'visible',
+    overflow: 'hidden',
   },
+  globeStageNarrow: { flexGrow: 0, overflow: 'hidden' },
   toolbar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -566,6 +589,11 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     padding: 14,
     minHeight: 0,
+  },
+  sideNarrow: {
+    width: '100%',
+    maxHeight: 280,
+    flexShrink: 0,
   },
   sectionLabel: {
     color: Colors.textMuted,
