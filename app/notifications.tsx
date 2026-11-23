@@ -1,109 +1,119 @@
 import React, { useEffect } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Avatar, Card, PrimaryButton } from '@/components/ui';
-import { getPerson } from '@/constants/mockData';
-import { Colors, Spacing } from '@/constants/theme';
+import { getPerson, isConfidential } from '@/constants/mockData';
+import { Colors, Radii } from '@/constants/theme';
 import { useApp } from '@/context/AppContext';
 
 export default function NotificationsScreen() {
   const router = useRouter();
-  const { notifications, markNotificationsRead, rememberPerson, requestIntro, isSaved } = useApp();
+  const { notifications, markNotificationsRead, requestIntro, profile } = useApp();
 
   useEffect(() => {
     markNotificationsRead();
   }, [markNotificationsRead]);
 
+  const items = notifications.filter((n) => {
+    if (n.action === 'connect') return true;
+    const person = n.personId ? getPerson(n.personId) : undefined;
+    return person ? isConfidential(person) : false;
+  });
+
   return (
-    <ScrollView
-      style={styles.screen}
-      contentContainerStyle={{ padding: Spacing.lg, paddingBottom: 40 }}
-      showsVerticalScrollIndicator={false}
-    >
+    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+      <Text style={styles.kicker}>Updates</Text>
+      <Text style={styles.title}>From the Founder’s circle</Text>
       <Text style={styles.intro}>
-        Useful updates from people who opted to share — not engagement bait.
+        Names stay hidden. You see the profession and the city, then ask the Founder if you want an introduction.
       </Text>
 
-      {notifications.map((n) => {
-        const person = n.personId ? getPerson(n.personId) : undefined;
-        return (
-          <Card key={n.id} style={{ marginBottom: 12, opacity: n.unread ? 1 : 0.85 }}>
-            {n.unread ? <View style={styles.unread} /> : null}
-            <View style={styles.header}>
-              {person ? (
-                <Avatar
-                  initials={person.initials}
-                  color={person.color}
-                  photo={person.photo}
-                  size={44}
-                />
-              ) : null}
-              <View style={{ flex: 1, marginLeft: person ? 12 : 0, paddingRight: 12 }}>
-                <Text style={styles.title}>{n.title}</Text>
-                <Text style={styles.body}>{n.body}</Text>
-                <Text style={styles.time}>{n.time}</Text>
+      {items.length === 0 ? (
+        <Text style={styles.empty}>No updates yet.</Text>
+      ) : (
+        items.map((n) => {
+          const person = n.personId ? getPerson(n.personId) : undefined;
+          const hidden = person ? isConfidential(person) : false;
+          return (
+            <View key={n.id} style={styles.row}>
+              <View style={styles.mark}>
+                <Text style={styles.markTxt}>?</Text>
               </View>
-            </View>
-            {n.action === 'connect' ? (
-              <PrimaryButton title="Open Add" onPress={() => router.push('/connect')} />
-            ) : null}
-            <View style={styles.actions}>
-              {n.personId ? (
-                <>
-                  <PrimaryButton
-                    title="View Profile"
-                    onPress={() => router.push(`/person/${n.personId}`)}
-                    style={{ flex: 1 }}
-                  />
-                  <PrimaryButton
-                    title={isSaved(n.personId) ? 'Saved' : 'Remember'}
-                    variant="secondary"
-                    onPress={() => rememberPerson(n.personId!)}
-                    style={{ flex: 1 }}
-                  />
-                </>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={styles.rowTitle} numberOfLines={1}>
+                  {hidden ? person?.profession : n.title}
+                </Text>
+                <Text style={styles.rowBody} numberOfLines={2}>
+                  {hidden
+                    ? `Confidential${person?.location ? ` · ${person.location}` : ''}`
+                    : n.body}
+                </Text>
+              </View>
+              {n.action === 'connect' ? (
+                <Pressable onPress={() => router.push('/connect')} style={styles.action}>
+                  <Text style={styles.actionTxt}>Open</Text>
+                </Pressable>
+              ) : person && hidden ? (
+                <Pressable
+                  onPress={() => {
+                    requestIntro(
+                      person.id,
+                      `${profile.name.split(' ')[0]} would like an introduction to a ${person.profession}${
+                        person.location ? ` in ${person.location}` : ''
+                      }.`
+                    );
+                    router.push('/introductions');
+                  }}
+                  style={styles.action}
+                >
+                  <Text style={styles.actionTxt}>Ask</Text>
+                </Pressable>
               ) : null}
             </View>
-            {n.personId ? (
-              <PrimaryButton
-                title="Request Introduction"
-                variant="ghost"
-                onPress={() => requestIntro(n.personId!, '')}
-                style={{ marginTop: 8 }}
-              />
-            ) : null}
-          </Card>
-        );
-      })}
-
-      <Pressable onPress={() => router.push('/notification-settings')}>
-        <Text style={styles.settings}>Notification preferences →</Text>
-      </Pressable>
+          );
+        })
+      )}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.bg },
-  intro: { color: Colors.textSecondary, marginBottom: 16, lineHeight: 20 },
-  unread: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.accent,
-  },
-  header: { flexDirection: 'row', alignItems: 'flex-start' },
-  title: { color: Colors.text, fontSize: 15, fontWeight: '700' },
-  body: { color: Colors.textSecondary, marginTop: 6, lineHeight: 20 },
-  time: { color: Colors.textMuted, fontSize: 12, marginTop: 8 },
-  actions: { flexDirection: 'row', gap: 8, marginTop: 14 },
-  settings: {
+  content: { paddingHorizontal: 28, paddingTop: 28, paddingBottom: 48, maxWidth: 720 },
+  kicker: {
     color: Colors.accent,
-    textAlign: 'center',
-    marginTop: 8,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1.1,
+    textTransform: 'uppercase',
   },
+  title: { color: Colors.text, fontSize: 32, fontWeight: '800', letterSpacing: -0.6, marginTop: 6 },
+  intro: { color: Colors.textSecondary, marginTop: 8, marginBottom: 22, lineHeight: 21, fontSize: 15 },
+  empty: { color: Colors.textMuted, fontSize: 14 },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+  },
+  mark: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#2A2A38',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  markTxt: { color: '#F8FAFC', fontSize: 18, fontWeight: '700' },
+  rowTitle: { color: Colors.text, fontSize: 16, fontWeight: '700' },
+  rowBody: { color: Colors.textMuted, fontSize: 13, marginTop: 3 },
+  action: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: Radii.full,
+    borderWidth: 1,
+    borderColor: 'rgba(167,139,250,0.4)',
+  },
+  actionTxt: { color: '#C4B5FD', fontWeight: '700', fontSize: 13 },
 });

@@ -349,7 +349,7 @@ export default function CircleWeb() {
                           {hidden ? p.profession : p.name}
                         </Text>
                         <Text style={styles.rowMeta} numberOfLines={1}>
-                          {hidden ? 'Confidential' : p.profession}
+                          {hidden ? `Confidential${p.location ? ` · ${p.location}` : ''}` : p.profession}
                         </Text>
                       </View>
                     </Pressable>
@@ -383,7 +383,9 @@ export default function CircleWeb() {
                           {hidden ? p.profession : p.name}
                         </Text>
                         <Text style={styles.rowMeta} numberOfLines={1}>
-                          {hidden ? 'Confidential · via Founder' : `${p.profession} · via ${p.via || 'mutual'}`}
+                          {hidden
+                            ? `Confidential${p.location ? ` · ${p.location}` : ''}`
+                            : `${p.profession}${p.location ? ` · ${p.location}` : ''} · via ${p.via || 'mutual'}`}
                         </Text>
                       </View>
                     </Pressable>

@@ -121,36 +121,37 @@ export const MY_CIRCLE: Person[] = [FOUNDER];
 const PHANTOM = (
   profession: string,
   id: string,
-  color: string
+  color: string,
+  location: string
 ): Person => ({
   id,
   name: 'Confidential',
   firstName: 'Confidential',
   profession,
-  location: '',
+  location,
   interests: [],
-  bio: 'Identity withheld. Profession is visible because they sit in the Founder’s circle.',
+  bio: `Identity withheld. ${profession} in ${location}, reached through the Founder.`,
   degree: 2,
   via: 'Founder of the app',
   viaId: 'founder',
   color,
-  initials: '·',
-  photo: defaultAvatar(id),
+  initials: '?',
+  photo: '',
   confidential: true,
   showProfession: true,
-  showLocation: false,
+  showLocation: true,
 });
 
-/** Founder’s circle. Names stay confidential. Professions are public. */
+/** Founder’s circle. Names stay confidential. Profession and city are public. */
 export const FOUNDER_CONTACTS: Person[] = [
-  PHANTOM('Wealth Manager', 'ph-wealth', '#FDE68A'),
-  PHANTOM('Banker', 'ph-banker', '#67E8F9'),
-  PHANTOM('Sales and Trading Analyst', 'ph-st', '#A78BFA'),
-  PHANTOM('Software Engineer', 'ph-swe', '#34D399'),
-  PHANTOM('Forward Deployment Analyst', 'ph-fda', '#F9A8D4'),
-  PHANTOM('General Counsel', 'ph-counsel', '#FDBA74'),
-  PHANTOM('Venture Investor', 'ph-vc', '#C4B5FD'),
-  PHANTOM('Operator', 'ph-operator', '#93C5FD'),
+  PHANTOM('Wealth Manager', 'ph-wealth', '#FDE68A', 'New York'),
+  PHANTOM('Banker', 'ph-banker', '#67E8F9', 'New York'),
+  PHANTOM('Sales and Trading Analyst', 'ph-st', '#A78BFA', 'New York'),
+  PHANTOM('Software Engineer', 'ph-swe', '#34D399', 'San Francisco'),
+  PHANTOM('Forward Deployment Analyst', 'ph-fda', '#F9A8D4', 'London'),
+  PHANTOM('General Counsel', 'ph-counsel', '#FDBA74', 'New York'),
+  PHANTOM('Venture Investor', 'ph-vc', '#C4B5FD', 'New York'),
+  PHANTOM('Operator', 'ph-operator', '#93C5FD', 'Austin'),
 ];
 
 export const PEOPLE: Person[] = [
@@ -481,48 +482,16 @@ export const CATEGORY_MAP: Record<string, string[]> = {
 
 export const INITIAL_INTROS: IntroRequest[] = [];
 
-export const INITIAL_NOTIFICATIONS: AppNotification[] = [
-  {
-    id: 'n1',
-    title: 'New professional in your circle',
-    body: 'A member just connected with an Automotive Specialist in NYC.',
-    time: '2h ago',
-    personId: 'david',
-    unread: true,
-  },
-  {
-    id: 'n2',
-    title: 'Circle update',
-    body: 'Michael added a new Hairstylist to his circle.',
-    time: '5h ago',
-    personId: 'alex-morgan',
-    unread: true,
-  },
-  {
-    id: 'n3',
-    title: 'Shared interest',
-    body: 'Someone in your extended circle is a Real Madrid supporter.',
-    time: 'Yesterday',
-    personId: 'alex-morgan',
-    unread: true,
-  },
-  {
-    id: 'n4',
-    title: 'Verification update',
-    body: 'Alex Morgan, connected through Misha, is now professionally verified.',
-    time: '2d ago',
-    personId: 'alex-morgan',
-    unread: false,
-  },
-  {
-    id: 'n5',
-    title: 'Local discovery',
-    body: 'A photographer two connections away just joined nearby.',
-    time: '3d ago',
-    personId: 'sophie',
-    unread: false,
-  },
-];
+export const INITIAL_NOTIFICATIONS: AppNotification[] = FOUNDER_CONTACTS.slice(0, 4).map(
+  (p, i) => ({
+    id: `n-${p.id}`,
+    title: p.profession,
+    body: `Confidential · ${p.location}. In the Founder’s circle.`,
+    time: ['2h ago', '5h ago', 'Yesterday', '2d ago'][i] || 'Recently',
+    personId: p.id,
+    unread: i < 2,
+  })
+);
 
 export const NEARBY_PEOPLE = [
   { id: 'alex-morgan', name: 'Alex Morgan', distance: '2 feet away', note: 'Ready to connect' },
