@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import {
   NetworkGlobe,
   ZOOM_FOR_DEGREE,
   filterToMaxDegree,
+  getDefaultGlobeSize,
 } from '@/components/NetworkGlobe';
 import { ProfilePreview } from '@/components/ProfilePreview';
 import { Logo } from '@/components/Logo';
@@ -36,6 +37,7 @@ export default function CircleScreen() {
 
 function CircleNative() {
   const insets = useSafeAreaInsets();
+  const { width: winW, height: winH } = useWindowDimensions();
   const router = useRouter();
   const { unreadCount, isSaved, rememberPerson, requestIntro, profile } = useApp();
   const [filter, setFilter] = useState<DegreeFilter>('all');
@@ -45,6 +47,10 @@ function CircleNative() {
 
   const maxDegree = filterToMaxDegree(filter);
   const bottomPad = Math.max(insets.bottom, 10) + TAB_CLEARANCE;
+  // Fit the orbit to the live viewport (critical on phone web — module defaults can be desktop-sized).
+  const globeSize = Math.floor(
+    Math.min(winW - 28, Math.max(240, winH - insets.top - bottomPad - 140), 400)
+  ) || getDefaultGlobeSize();
 
   const handleZoomChange = useCallback((next: number) => setZoom(next), []);
 
@@ -117,6 +123,7 @@ function CircleNative() {
       <View style={styles.globeArea}>
         <NetworkGlobe
           compact
+          size={globeSize}
           maxDegree={maxDegree}
           zoom={zoom}
           onZoomChange={handleZoomChange}

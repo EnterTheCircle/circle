@@ -23,9 +23,13 @@ import { Colors } from '@/constants/theme';
 import { avatarSource } from '@/lib/avatars';
 import { First10kMedal } from '@/components/First10kMedal';
 
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
-/** Default canvas size (mobile / when no size prop). */
-export const DEFAULT_GLOBE_SIZE = Math.min(SCREEN_W + 8, Math.max(400, SCREEN_H * 0.58));
+/** Default canvas size (mobile / when no size prop). Computed at call time so web resize/phone layout stays correct. */
+export function getDefaultGlobeSize() {
+  const { width, height } = Dimensions.get('window');
+  return Math.floor(Math.min(width - 24, Math.max(260, height * 0.5), 420));
+}
+/** @deprecated Prefer getDefaultGlobeSize() — kept for imports. */
+export const DEFAULT_GLOBE_SIZE = getDefaultGlobeSize();
 const FOV = 500;
 
 export type DegreeFilter = 1 | 2 | 3 | 'all';
@@ -305,7 +309,7 @@ export function NetworkGlobe({
   mePerson,
   showFirst10k,
 }: Props) {
-  const size = sizeProp ?? DEFAULT_GLOBE_SIZE;
+  const size = sizeProp ?? getDefaultGlobeSize();
   const [tick, setTick] = useState(0);
   const yaw = useRef(0.55);
   const pitch = useRef(0.38);
