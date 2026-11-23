@@ -87,16 +87,16 @@ export function FloatingTabBar(_props?: unknown) {
   };
 
   return (
-    <View style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, 10) }]}>
+    <View style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+      <Pressable style={styles.plus} onPress={() => router.push('/connect')}>
+        <Ionicons name="add" size={28} color="#fff" />
+      </Pressable>
       <View style={styles.bar}>
         <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
         {left.map(renderItem)}
         <View style={styles.spacer} />
         {right.map(renderItem)}
       </View>
-      <Pressable style={styles.plus} onPress={() => router.push('/connect')}>
-        <Ionicons name="add" size={28} color="#fff" />
-      </Pressable>
     </View>
   );
 }
@@ -104,10 +104,12 @@ export function FloatingTabBar(_props?: unknown) {
 const styles = StyleSheet.create({
   wrap: {
     position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 0,
+    left: 12,
+    right: 12,
+    bottom: 8,
     alignItems: 'center',
+    overflow: 'visible',
+    zIndex: 40,
   },
   bar: {
     flexDirection: 'row',
@@ -126,7 +128,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 3,
   },
-  spacer: { width: 58 },
+  spacer: { width: 64 },
   label: {
     fontSize: 10,
     color: Colors.textMuted,
@@ -149,11 +151,11 @@ const styles = StyleSheet.create({
   },
   badgeText: { color: '#fff', fontSize: 12, fontWeight: '800', lineHeight: 14 },
   plus: {
-    position: 'absolute',
-    top: -26,
     width: 56,
     height: 56,
     borderRadius: 28,
+    marginBottom: -30,
+    zIndex: 30,
     backgroundColor: Colors.accentStrong,
     alignItems: 'center',
     justifyContent: 'center',
@@ -163,6 +165,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.55,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 6 },
-    elevation: 8,
+    elevation: 10,
   },
 });

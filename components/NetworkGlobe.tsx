@@ -197,20 +197,20 @@ function buildNodes(focusId: string, size: number, compact = false): GlobeNode[]
   const a = stableSort(first);
   const b = stableSort(second);
   const nodes: GlobeNode[] = [];
-  // Desktop web only — phone web passes compact to keep native orbit spacing.
+  // Desktop web only — phone web passes compact for phone-safe spacing.
   const isWeb = Platform.OS === 'web' && !compact;
-  const nodeScale = isWeb ? Math.max(0.95, size / 480) : 1;
+  const nodeScale = isWeb ? Math.max(0.95, size / 480) : compact ? Math.min(1, size / 360) : 1;
 
-  // Web: wider rings to fill the desktop pane. Phone: original compact orbits.
-  const r1 = size * (isWeb ? 0.4 : 0.34);
-  const r2 = size * (isWeb ? 0.545 : 0.46);
-  const r3 = size * (isWeb ? 0.68 : 0.56);
+  // Compact (phone): slightly wider rings + fewer seats so faces don't pile up.
+  const r1 = size * (isWeb ? 0.4 : compact ? 0.39 : 0.34);
+  const r2 = size * (isWeb ? 0.545 : compact ? 0.54 : 0.46);
+  const r3 = size * (isWeb ? 0.68 : compact ? 0.68 : 0.56);
 
   const tilt1 = { x: 0.42, y: 0.18, z: 0.08 };
   const tilt2 = { x: -0.55, y: 0.72, z: -0.2 };
   const tilt3 = { x: 0.25, y: -0.85, z: 0.35 };
 
-  const seats1 = Math.max(isWeb ? 8 : Math.max(a.length, 1), a.length);
+  const seats1 = Math.max(isWeb ? 8 : compact ? Math.max(a.length, 1) : Math.max(a.length, 1), a.length);
   a.forEach((p, i) => {
     nodes.push({
       person: p,
@@ -237,7 +237,7 @@ function buildNodes(focusId: string, size: number, compact = false): GlobeNode[]
     0.2
   );
 
-  const seats2 = Math.max(isWeb ? 12 : Math.max(b.length, 1), b.length);
+  const seats2 = Math.max(isWeb ? 12 : compact ? Math.max(b.length, Math.min(b.length + 2, 8)) : Math.max(b.length, 1), b.length);
   b.forEach((p, i) => {
     nodes.push({
       person: p,
@@ -264,8 +264,8 @@ function buildNodes(focusId: string, size: number, compact = false): GlobeNode[]
     0.55
   );
 
-  // Outer ring: + invite seats so sparse circles don’t look empty
-  const seats3 = isWeb ? 10 : 8;
+  // Outer ring: + invite seats — fewer on phone so the orbit breathes
+  const seats3 = isWeb ? 10 : compact ? 4 : 8;
   for (let i = 0; i < seats3; i++) {
     nodes.push({
       person: emptyPerson(`empty-3-${i}`, 3),
@@ -538,7 +538,9 @@ export function NetworkGlobe({
   const ringScale =
     Platform.OS === 'web' && !compact
       ? { a: 0.4, b: 0.545, c: 0.68 }
-      : { a: 0.34, b: 0.46, c: 0.56 };
+      : compact
+        ? { a: 0.39, b: 0.54, c: 0.68 }
+        : { a: 0.34, b: 0.46, c: 0.56 };
   const guides = (
     [
       { r: size * ringScale.a, tilt: { x: 0.42, y: 0.18, z: 0.08 }, show: true, color: 'rgba(167,139,250,0.4)' },
@@ -692,9 +694,16 @@ export function NetworkGlobe({
         const showLabel =
           !isEmpty &&
           (confidential
-            ? n.occlude > 0.35
-            : !n.anonymous && (hot || (n.ring === 1 && n.front && !highlightId && n.occlude > 0.75)));
-        const draw = confidential ? Math.max(n.size, 44) : n.size;
+            ? !compact && n.occlude > 0.35
+            : !n.anonymous &&
+              (hot ||
+                (!compact && n.ring === 1 && n.front && !highlightId && n.occlude > 0.75) ||
+                (compact && hot)));
+        const draw = confidential
+          ? Math.max(n.size, compact ? 36 : 44)
+          : compact
+            ? Math.min(n.size, n.ring === 1 ? 34 : 26)
+            : n.size;
 
         return (
           <View

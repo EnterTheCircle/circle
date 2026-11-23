@@ -20,7 +20,7 @@ import { useApp } from '@/context/AppContext';
 import CircleWeb from '@/components/web/CirclePage';
 import { useIsNarrowWeb } from '@/lib/useWebLayout';
 
-const TAB_CLEARANCE = 118;
+const TAB_CLEARANCE = 132;
 const FILTERS: { key: DegreeFilter; label: string }[] = [
   { key: 1, label: 'Yours' },
   { key: 2, label: 'Through' },
@@ -41,7 +41,8 @@ function CircleNative() {
   const router = useRouter();
   const { unreadCount, isSaved, rememberPerson, requestIntro, profile } = useApp();
   const [filter, setFilter] = useState<DegreeFilter>('all');
-  const [zoom, setZoom] = useState(ZOOM_FOR_DEGREE[3]);
+  // Slightly more zoomed-out on phone web so rings aren't a pile in the middle.
+  const [zoom, setZoom] = useState(Platform.OS === 'web' ? 0.72 : ZOOM_FOR_DEGREE[3]);
   const [focusId, setFocusId] = useState('me');
   const [preview, setPreview] = useState<Person | null>(null);
 
@@ -49,7 +50,7 @@ function CircleNative() {
   const bottomPad = Math.max(insets.bottom, 10) + TAB_CLEARANCE;
   // Fit the orbit to the live viewport (critical on phone web — module defaults can be desktop-sized).
   const globeSize = Math.floor(
-    Math.min(winW - 28, Math.max(240, winH - insets.top - bottomPad - 140), 400)
+    Math.min(winW - 20, Math.max(280, winH - insets.top - bottomPad - 120), 440)
   ) || getDefaultGlobeSize();
 
   const handleZoomChange = useCallback((next: number) => setZoom(next), []);
@@ -123,6 +124,7 @@ function CircleNative() {
       <View style={styles.globeArea}>
         <NetworkGlobe
           compact
+          hideChrome={Platform.OS === 'web'}
           size={globeSize}
           maxDegree={maxDegree}
           zoom={zoom}
