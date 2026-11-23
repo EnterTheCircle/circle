@@ -11,10 +11,8 @@ import {
 } from '@/components/NetworkGlobe';
 import { Avatar, PrimaryButton } from '@/components/ui';
 import {
-  NETWORK_STATS,
-  FOUNDER_CONTACTS,
-  PEOPLE,
   activeCircle,
+  reachThroughCircle,
   isConfidential,
   Person,
   enrichPerson,
@@ -38,8 +36,19 @@ function clampZoom(z: number) {
 
 export default function CircleWeb() {
   const router = useRouter();
-  const { unreadCount, isSaved, rememberPerson, requestIntro, profile, startTour, demoMode, isAppFounder } =
-    useApp();
+  const {
+    unreadCount,
+    isSaved,
+    rememberPerson,
+    requestIntro,
+    profile,
+    startTour,
+    demoMode,
+    isAppFounder,
+    networkFirst,
+    networkSecond,
+    refreshNetwork,
+  } = useApp();
   const [filter, setFilter] = useState<DegreeFilter>('all');
   const [zoom, setZoom] = useState(WEB_ZOOM_FOR_DEGREE[3]);
   const [focusId, setFocusId] = useState('me');
@@ -89,14 +98,13 @@ export default function CircleWeb() {
 
   const people = useMemo(() => {
     const max = filterToMaxDegree(filter);
-    const first = isAppFounder
-      ? FOUNDER_CONTACTS.map((p) => ({ ...p, degree: 1 as const, via: undefined, viaId: undefined }))
-      : activeCircle();
-    const through = isAppFounder ? [] : demoMode ? PEOPLE.filter((p) => p.degree === 2) : FOUNDER_CONTACTS;
-    return [...first, ...through].map(enrichPerson)
+    const first = activeCircle();
+    const through = isAppFounder ? [] : reachThroughCircle();
+    return [...first, ...through]
+      .map(enrichPerson)
       .filter((p) => p.degree <= max)
       .sort((a, b) => a.degree - b.degree || a.name.localeCompare(b.name));
-  }, [filter, demoMode, isAppFounder]);
+  }, [filter, demoMode, isAppFounder, networkFirst, networkSecond]);
 
   const focus = focusId === 'me' ? mePerson : getPerson(focusId);
 
@@ -106,22 +114,19 @@ export default function CircleWeb() {
         <View style={styles.statsWrap}>
           <View style={styles.statsRow}>
             <View style={styles.stat}>
-              <Text style={styles.statNum}>
-                {isAppFounder ? FOUNDER_CONTACTS.length : demoMode ? activeCircle().length : NETWORK_STATS.direct}
-              </Text>
+              <Text style={styles.statNum}>{networkFirst.length || activeCircle().length}</Text>
               <Text style={styles.statLbl}>Direct</Text>
             </View>
             <View style={styles.statRule} />
             <View style={styles.stat}>
               <Text style={styles.statNum}>
-                {isAppFounder
-                  ? 0
-                  : demoMode
-                    ? PEOPLE.filter((p) => p.degree >= 2).length
-                    : FOUNDER_CONTACTS.length}
+                {isAppFounder ? 0 : networkSecond.length || reachThroughCircle().length}
               </Text>
               <Text style={styles.statLbl}>In reach</Text>
             </View>
+            <Pressable style={styles.help} onPress={() => void refreshNetwork()}>
+              <Text style={styles.helpMark}>↻</Text>
+            </Pressable>
             <Pressable
               style={[styles.help, helpOpen && styles.helpOn]}
               onPress={() => setHelpOpen((v) => !v)}

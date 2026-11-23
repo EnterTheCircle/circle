@@ -1,30 +1,67 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { getPerson, isConfidential } from '@/constants/mockData';
+import { AppNotification, getPerson, isConfidential } from '@/constants/mockData';
 import { Colors, Radii } from '@/constants/theme';
 import { useApp } from '@/context/AppContext';
+import { api, apiEnabled } from '@/lib/api';
+import { getApiToken } from '@/lib/circleAuth';
 
 export default function NotificationsScreen() {
   const router = useRouter();
-  const { notifications, markNotificationsRead, requestIntro, profile } = useApp();
+  const {
+    notifications,
+    markNotificationsRead,
+    requestIntro,
+    profile,
+    isAppFounder,
+    demoMode,
+    refreshNetwork,
+  } = useApp();
+  const [remote, setRemote] = useState<AppNotification[]>([]);
 
   useEffect(() => {
     markNotificationsRead();
   }, [markNotificationsRead]);
 
-  const items = notifications.filter((n) => {
-    if (n.action === 'connect') return true;
-    const person = n.personId ? getPerson(n.personId) : undefined;
-    return person ? isConfidential(person) : false;
-  });
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!apiEnabled || demoMode) return;
+      const token = await getApiToken();
+      if (!token) return;
+      const res = await api.notifications(token);
+      if (!res.ok || cancelled) return;
+      setRemote(
+        (res.notifications || []).map((n) => ({
+          id: n.id,
+          title: n.title,
+          body: n.body,
+          time: n.time_label || 'Recently',
+          personId: n.person_id,
+          unread: !!n.unread,
+          action: n.action === 'connect' ? ('connect' as const) : undefined,
+        }))
+      );
+      void refreshNetwork();
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [demoMode, refreshNetwork]);
+
+  const items = [...remote, ...notifications];
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Text style={styles.kicker}>Updates</Text>
-      <Text style={styles.title}>From the Founder’s circle</Text>
+      <Text style={styles.title}>{isAppFounder ? 'Your circle' : 'Updates'}</Text>
       <Text style={styles.intro}>
-        Names stay hidden. You see the profession and the city, then ask the Founder if you want an introduction.
+        {isAppFounder
+          ? 'New members and connection activity in your circle.'
+          : demoMode
+            ? 'Sample updates for the demo circle.'
+            : 'Connection asks and notes from people in your circle.'}
       </Text>
 
       {items.length === 0 ? (
@@ -36,7 +73,7 @@ export default function NotificationsScreen() {
           return (
             <View key={n.id} style={styles.row}>
               <View style={styles.mark}>
-                <Text style={styles.markTxt}>?</Text>
+                <Text style={styles.markTxt}>{hidden ? '?' : '•'}</Text>
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={styles.rowTitle} numberOfLines={1}>
@@ -78,42 +115,36 @@ export default function NotificationsScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.bg },
-  content: { paddingHorizontal: 28, paddingTop: 28, paddingBottom: 48, maxWidth: 720 },
-  kicker: {
-    color: Colors.accent,
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
-  },
-  title: { color: Colors.text, fontSize: 32, fontWeight: '800', letterSpacing: -0.6, marginTop: 6 },
-  intro: { color: Colors.textSecondary, marginTop: 8, marginBottom: 22, lineHeight: 21, fontSize: 15 },
-  empty: { color: Colors.textMuted, fontSize: 14 },
+  content: { padding: 20, paddingBottom: 48, gap: 10 },
+  kicker: { color: Colors.textMuted, letterSpacing: 2, fontSize: 11, fontWeight: '700' },
+  title: { color: Colors.text, fontSize: 28, fontWeight: '700', letterSpacing: -0.6 },
+  intro: { color: Colors.textSecondary, fontSize: 14, marginBottom: 8, lineHeight: 20 },
+  empty: { color: Colors.textMuted, marginTop: 24 },
   row: {
     flexDirection: 'row',
+    gap: 12,
     alignItems: 'center',
-    gap: 14,
     paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.border,
   },
   mark: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#2A2A38',
+    width: 36,
+    height: 36,
+    borderRadius: Radii.full,
+    backgroundColor: Colors.bgElevated,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  markTxt: { color: '#F8FAFC', fontSize: 18, fontWeight: '700' },
-  rowTitle: { color: Colors.text, fontSize: 16, fontWeight: '700' },
-  rowBody: { color: Colors.textMuted, fontSize: 13, marginTop: 3 },
+  markTxt: { color: Colors.textMuted, fontWeight: '700' },
+  rowTitle: { color: Colors.text, fontWeight: '700', fontSize: 14 },
+  rowBody: { color: Colors.textSecondary, fontSize: 12, marginTop: 2 },
   action: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: Radii.full,
     borderWidth: 1,
-    borderColor: 'rgba(167,139,250,0.4)',
+    borderColor: Colors.borderStrong,
+    borderRadius: Radii.full,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
-  actionTxt: { color: '#C4B5FD', fontWeight: '700', fontSize: 13 },
+  actionTxt: { color: Colors.text, fontSize: 12, fontWeight: '600' },
 });

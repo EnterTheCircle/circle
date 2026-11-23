@@ -444,10 +444,24 @@ export function setCircleMode(mode: 'member' | 'demo' | 'founder') {
 
 export function activeCircle(): Person[] {
   if (circleMode === 'demo') return DEMO_CIRCLE;
-  if (circleMode === 'founder') {
-    return FOUNDER_CONTACTS.map((p) => ({ ...p, degree: 1, via: undefined, viaId: undefined }));
+  // Real mode: only API-backed people (no dummy FOUNDER_CONTACTS / PEOPLE).
+  if (liveNetwork.first.length || liveNetwork.second.length || circleMode === 'founder') {
+    return liveNetwork.first.map((p) => ({ ...p, degree: 1 as Degree, via: undefined, viaId: undefined }));
   }
+  // Offline fallback before network loads: Founder only for members.
   return MY_CIRCLE;
+}
+
+export function reachThroughCircle(): Person[] {
+  if (circleMode === 'demo') return PEOPLE.filter((p) => p.degree === 2);
+  return liveNetwork.second.map((p) => ({ ...p, degree: 2 as Degree }));
+}
+
+export function discoverPool(): Person[] {
+  if (circleMode === 'demo') {
+    return PEOPLE.filter((p) => p.degree === 1 || p.degree === 2);
+  }
+  return livePeopleFlat();
 }
 
 export const DISCOVER_IDS = [
@@ -482,7 +496,8 @@ export const CATEGORY_MAP: Record<string, string[]> = {
 
 export const INITIAL_INTROS: IntroRequest[] = [];
 
-export const INITIAL_NOTIFICATIONS: AppNotification[] = FOUNDER_CONTACTS.slice(0, 4).map(
+/** Demo-only seed. Real accounts start with an empty inbox. */
+export const DEMO_NOTIFICATIONS: AppNotification[] = FOUNDER_CONTACTS.slice(0, 4).map(
   (p, i) => ({
     id: `n-${p.id}`,
     title: p.profession,
@@ -492,6 +507,26 @@ export const INITIAL_NOTIFICATIONS: AppNotification[] = FOUNDER_CONTACTS.slice(0
     unread: i < 2,
   })
 );
+
+export const INITIAL_NOTIFICATIONS: AppNotification[] = [];
+
+/** Live members from the API (orbit + discover). Demo mode ignores this. */
+let liveNetwork: { first: Person[]; second: Person[] } = { first: [], second: [] };
+
+export function setLiveNetwork(next: { first: Person[]; second: Person[] }) {
+  liveNetwork = {
+    first: next.first || [],
+    second: next.second || [],
+  };
+}
+
+export function getLiveNetwork() {
+  return liveNetwork;
+}
+
+export function livePeopleFlat(): Person[] {
+  return [...liveNetwork.first, ...liveNetwork.second];
+}
 
 export const NEARBY_PEOPLE = [
   { id: 'alex-morgan', name: 'Alex Morgan', distance: '2 feet away', note: 'Ready to connect' },
@@ -571,8 +606,14 @@ export function isConfidential(p: Person): boolean {
 
 export function getPerson(id: string): Person | undefined {
   if (id === 'me') return enrichPerson(ME);
-  const p = PEOPLE.find((x) => x.id === id);
-  return p ? enrichPerson(p) : undefined;
+  const live = livePeopleFlat().find((x) => x.id === id);
+  if (live) return enrichPerson(live);
+  if (circleMode === 'demo') {
+    const p = PEOPLE.find((x) => x.id === id);
+    return p ? enrichPerson(p) : undefined;
+  }
+  if (id === 'founder' || id === FOUNDER.id) return enrichPerson(FOUNDER);
+  return undefined;
 }
 
 export function channelLabel(ch: ContactChannel): string {
@@ -689,10 +730,6 @@ export function getNeighbors(personId: string): Person[] {
     return activeCircle().map(enrichPerson);
   }
 
-  if (circleMode === 'founder' && FOUNDER_CONTACTS.some((p) => p.id === personId)) {
-    return [];
-  }
-
   const person = getPerson(personId);
   if (!person) return [];
 
@@ -708,7 +745,16 @@ export function getNeighbors(personId: string): Person[] {
   // Connected to you if they're a direct friend
   if (person.degree === 1) add(ME);
 
-  // People who list this person as the mutual / via
+  // Real mode: only use live via edges — no dummy PEOPLE graph.
+  if (circleMode !== 'demo') {
+    livePeopleFlat()
+      .filter((p) => p.viaId === personId)
+      .forEach(add);
+    if (person.viaId) add(getPerson(person.viaId));
+    return neighbors.map(enrichPerson);
+  }
+
+  // People who list this person as the mutual / via (demo only)
   PEOPLE.filter((p) => p.viaId === personId).forEach(add);
 
   // If this person is 2nd degree, their via is a neighbor

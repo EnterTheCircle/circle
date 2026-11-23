@@ -11,6 +11,7 @@ import {
   AppNotification,
   ContactChannel,
   IntroRequest,
+  DEMO_NOTIFICATIONS,
   INITIAL_INTROS,
   INITIAL_NOTIFICATIONS,
   ME,
@@ -19,8 +20,10 @@ import {
   defaultAvatar,
   getPerson,
   setCircleMode,
+  setLiveNetwork,
 } from '@/constants/mockData';
-import { getSession } from '@/lib/circleAuth';
+import { getApiToken, getSession } from '@/lib/circleAuth';
+import { api, apiEnabled } from '@/lib/api';
 import { FOUNDER_PHOTO, isGeneratedPhoto } from '@/lib/avatars';
 import { claimLiveWord, getIdentityId, normalizeWord } from '@/lib/identityCode';
 
@@ -138,6 +141,10 @@ type AppContextValue = {
   toast: string | null;
   showToast: (message: string) => void;
   clearToast: () => void;
+  /** Live 1st + 2nd circle from Render (empty in demo). */
+  networkFirst: Person[];
+  networkSecond: Person[];
+  refreshNetwork: () => Promise<void>;
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -189,6 +196,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [demoMode, setDemoMode] = useState(false);
   const [isAppFounder, setIsAppFounder] = useState(false);
   const [badgeCelebrate, setBadgeCelebrate] = useState(false);
+  const [networkFirst, setNetworkFirst] = useState<Person[]>([]);
+  const [networkSecond, setNetworkSecond] = useState<Person[]>([]);
+
+  const refreshNetwork = useCallback(async () => {
+    if (!apiEnabled || demoMode) {
+      setLiveNetwork({ first: [], second: [] });
+      setNetworkFirst([]);
+      setNetworkSecond([]);
+      return;
+    }
+    const token = await getApiToken();
+    if (!token) return;
+    const res = await api.network(token);
+    if (!res.ok) return;
+    const first = (res.first || []) as Person[];
+    const second = (res.second || []) as Person[];
+    setLiveNetwork({ first, second });
+    setNetworkFirst(first);
+    setNetworkSecond(second);
+  }, [demoMode]);
 
   useEffect(() => {
     let cancelled = false;
@@ -228,6 +255,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (founderSession && !onboarding?.demo) {
           setIsAppFounder(true);
           setCircleMode('founder');
+        }
+        if (!cancelled) {
+          if (onboarding?.demo) setNotifications(DEMO_NOTIFICATIONS);
+          else setNotifications(INITIAL_NOTIFICATIONS);
         }
         if (cancelled) return;
         if (profileRaw) {
@@ -330,6 +361,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setHasCompletedHowTo(true);
       setDemoMode(false);
       setCircleMode('member');
+      setNotifications([]);
+      setIntros([]);
       await persistOnboarding({
         hasSignedUp: true,
         hasCompletedHowTo: true,
@@ -338,8 +371,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       });
       setBadgeCelebrate(true);
       void AsyncStorage.setItem('circle.badge.celebrate', '1');
+      void refreshNetwork();
     },
-    [persistOnboarding]
+    [persistOnboarding, refreshNetwork]
   );
 
   const dismissBadge = useCallback(() => {
@@ -351,6 +385,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setIsAppFounder(true);
     setDemoMode(false);
     setCircleMode('founder');
+    setNotifications([]);
     setProfile((p) => {
       const name = p.name.trim().toLowerCase() === 'founder founder' ? 'Founder' : p.name || 'Founder';
       const next = {
@@ -362,7 +397,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       void AsyncStorage.setItem(PROFILE_KEY, JSON.stringify(next));
       return next;
     });
-  }, []);
+    void refreshNetwork();
+  }, [refreshNetwork]);
 
   const enterDemo = useCallback(async () => {
     const demoAccount: AccountState = {
@@ -384,6 +420,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setIsAppFounder(false);
     setAccount(demoAccount);
     setProfile(demoProfile);
+    setNotifications(DEMO_NOTIFICATIONS);
+    setLiveNetwork({ first: [], second: [] });
+    setNetworkFirst([]);
+    setNetworkSecond([]);
     setHasSignedUp(true);
     setHasCompletedHowTo(true);
     setTourStepState(0);
@@ -397,6 +437,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       demo: true,
     });
   }, [persistOnboarding]);
+
+  useEffect(() => {
+    if (!onboardingReady || !hasSignedUp || demoMode) return;
+    void refreshNetwork();
+    const id = setInterval(() => {
+      void refreshNetwork();
+    }, 30000);
+    return () => clearInterval(id);
+  }, [onboardingReady, hasSignedUp, demoMode, refreshNetwork]);
 
   const signOut = useCallback(async () => {
     setHasSignedUp(false);
@@ -654,6 +703,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       toast,
       showToast,
       clearToast,
+      networkFirst,
+      networkSecond,
+      refreshNetwork,
     }),
     [
       onboardingReady,
@@ -702,6 +754,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       toast,
       showToast,
       clearToast,
+      networkFirst,
+      networkSecond,
+      refreshNetwork,
     ]
   );
 

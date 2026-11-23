@@ -16,9 +16,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { Avatar, PrimaryButton } from '@/components/ui';
 import {
   ME,
-  PEOPLE,
   Person,
   channelLabel,
+  discoverPool,
   enrichPerson,
   getPerson,
   isGhostToSecond,
@@ -36,16 +36,17 @@ export default function DiscoverScreen() {
 function DiscoverNative() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { requestIntro, rememberPerson, isSaved, showToast, profile } = useApp();
+  const { requestIntro, rememberPerson, isSaved, showToast, profile, networkFirst, networkSecond, demoMode } =
+    useApp();
   const [query, setQuery] = useState('');
   const [submitted, setSubmitted] = useState('');
 
   const reach = useMemo(
     () =>
-      PEOPLE.filter((p) => p.degree === 1 || p.degree === 2)
+      discoverPool()
         .map(enrichPerson)
         .filter((p) => p.discoverable !== 'hidden'),
-    []
+    [networkFirst, networkSecond, demoMode]
   );
 
   const results = useMemo(() => {

@@ -12,9 +12,9 @@ import { useRouter } from 'expo-router';
 import { Glyph } from '@/components/Glyph';
 import { PrimaryButton } from '@/components/ui';
 import {
-  PEOPLE,
   Person,
   channelLabel,
+  discoverPool,
   enrichPerson,
   getPerson,
   isConfidential,
@@ -27,17 +27,18 @@ import { useApp } from '@/context/AppContext';
 
 export default function DiscoverWeb() {
   const router = useRouter();
-  const { requestIntro, rememberPerson, isSaved, showToast, profile } = useApp();
+  const { requestIntro, rememberPerson, isSaved, showToast, profile, networkFirst, networkSecond, demoMode } =
+    useApp();
   const [query, setQuery] = useState('');
   const [submitted, setSubmitted] = useState('');
   const [selected, setSelected] = useState<Person | null>(null);
 
   const reach = useMemo(
     () =>
-      PEOPLE.filter((p) => p.degree === 1 || p.degree === 2)
+      discoverPool()
         .map(enrichPerson)
         .filter((p) => p.discoverable !== 'hidden'),
-    []
+    [networkFirst, networkSecond, demoMode]
   );
 
   const results = useMemo(() => {
@@ -80,7 +81,11 @@ export default function DiscoverWeb() {
           <Text style={styles.kicker}>1st & 2nd circle only</Text>
           <Text style={styles.title}>Discover</Text>
           <Text style={styles.sub}>
-            Type who you need — lawyer, stylist, founder — and ask a mutual for a warm intro.
+            {demoMode
+              ? 'Sample circle — try lawyer, stylist, founder.'
+              : reach.length === 0
+                ? 'Your circle is empty so far. Connect someone and they’ll show up here.'
+                : 'Search people in your 1st & 2nd circle — then ask a mutual for a warm intro.'}
           </Text>
         </View>
         <Pressable style={styles.saved} onPress={() => router.push('/saved')}>

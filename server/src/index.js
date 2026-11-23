@@ -9,6 +9,12 @@ import {
   publicUser,
   userFromAuth,
 } from './auth.js';
+import {
+  backfillFounderConnections,
+  findFounder,
+  linkUsers,
+  networkForUser,
+} from './people.js';
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -254,6 +260,31 @@ app.post('/auth/signup', async (req, res) => {
     } catch {
       /* analytics must not block signup */
     }
+
+    // Every real member starts connected to the Founder.
+    if (username !== 'founder') {
+      try {
+        const founder = await findFounder();
+        if (founder) {
+          await linkUsers(founder.id, id);
+          await query(
+            `INSERT INTO notifications
+              (id, user_id, title, body, time_label, person_id, unread, action)
+             VALUES ($1,$2,$3,$4,'Just now',$5,TRUE,'connect')`,
+            [
+              newId('n'),
+              founder.id,
+              'New member',
+              `${name} (@${username}) joined Circle${location ? ` · ${location}` : ''}.`,
+              id,
+            ]
+          );
+        }
+      } catch (linkErr) {
+        console.error('founder link failed', linkErr);
+      }
+    }
+
     res.json({ ok: true, token, user });
   } catch (err) {
     console.error(err);
@@ -298,6 +329,20 @@ app.get('/me', async (req, res) => {
   if (!user) return res.status(401).json({ ok: false, error: 'Unauthorized' });
   const profile = await query(`SELECT * FROM profiles WHERE user_id = $1`, [user.id]);
   res.json({ ok: true, user: publicUser(user), profile: profile.rows[0] || null });
+});
+
+app.get('/me/network', async (req, res) => {
+  try {
+    const user = await userFromAuth(req);
+    if (!user) return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    // Heal any members who signed up before auto-link existed.
+    await backfillFounderConnections();
+    const network = await networkForUser(user.id, user.username);
+    res.json({ ok: true, ...network });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'Network failed.' });
+  }
 });
 
 app.put('/me/profile', async (req, res) => {
@@ -374,6 +419,12 @@ async function boot() {
     process.exit(1);
   }
   await migrate();
+  try {
+    const result = await backfillFounderConnections();
+    console.log(`founder links backfilled: ${result.linked}`);
+  } catch (err) {
+    console.error('backfill failed', err);
+  }
   app.listen(PORT, () => {
     console.log(`circle-api listening on ${PORT}`);
   });

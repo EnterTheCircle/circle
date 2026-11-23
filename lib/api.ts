@@ -103,4 +103,21 @@ export const api = {
         visitorId: string;
       }[];
     }>('/founder/stats', { token }),
+  network: (token: string) =>
+    request<{
+      first: import('@/constants/mockData').Person[];
+      second: import('@/constants/mockData').Person[];
+    }>('/me/network', { token }),
+  notifications: (token: string) =>
+    request<{
+      notifications: {
+        id: string;
+        title: string;
+        body: string;
+        time_label?: string;
+        person_id?: string;
+        unread?: boolean;
+        action?: string;
+      }[];
+    }>('/me/notifications', { token }),
 };
