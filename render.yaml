@@ -29,7 +29,7 @@ services:
   - type: web
     name: circle-web
     runtime: static
-    buildCommand: npm ci && npx expo export -p web
+    buildCommand: npm ci && EXPO_BASE_URL=/ npx expo export -p web
     staticPublishPath: dist
     routes:
       - type: rewrite
@@ -38,6 +38,8 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22"
-      # Set after first deploy to your circle-api public URL, e.g. https://circle-api-xxxx.onrender.com
+      - key: EXPO_BASE_URL
+        value: "/"
+      # Set once to your circle-api public URL, e.g. https://circle-api-uk0t.onrender.com
       - key: EXPO_PUBLIC_API_URL
         sync: false
