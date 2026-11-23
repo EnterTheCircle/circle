@@ -6,7 +6,6 @@ databases:
   - name: circle-db
     plan: free
     databaseName: circle
-    user: circle
 
 services:
   - type: web
@@ -30,7 +29,6 @@ services:
   - type: web
     name: circle-web
     runtime: static
-    plan: free
     buildCommand: npm ci && npx expo export -p web
     staticPublishPath: dist
     routes:
@@ -40,8 +38,6 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22"
+      # Set after first deploy to your circle-api public URL, e.g. https://circle-api-xxxx.onrender.com
       - key: EXPO_PUBLIC_API_URL
-        fromService:
-          name: circle-api
-          type: web
-          envVarKey: RENDER_EXTERNAL_URL
+        sync: false
