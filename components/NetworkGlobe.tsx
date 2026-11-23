@@ -673,10 +673,12 @@ export function NetworkGlobe({
           : (n.anonymous ? 0.28 : 0.45) * n.depthOpacity * n.occlude * (n.dim ? 0.22 : 1) +
             (n.front && !n.anonymous && !n.dim ? 0.28 : 0);
         const hot = !isEmpty && highlightId === n.person.id;
+        const confidential = !!n.person.confidential;
         const showLabel =
-          !n.anonymous &&
           !isEmpty &&
-          (hot || (n.ring === 1 && n.front && !highlightId && n.occlude > 0.75));
+          (confidential
+            ? n.front && n.occlude > 0.55
+            : !n.anonymous && (hot || (n.ring === 1 && n.front && !highlightId && n.occlude > 0.75)));
 
         return (
           <View
@@ -730,17 +732,27 @@ export function NetworkGlobe({
                 >
                   +
                 </Text>
-              ) : isGhostToSecond(n.person) ? (
-                <Text style={{ color: '#94A3B8', fontSize: Math.max(10, n.size * 0.32), fontWeight: '700' }}>
-                  ?
-                </Text>
+              ) : isGhostToSecond(n.person) || n.person.confidential ? (
+                <View
+                  style={{
+                    width: '42%',
+                    height: '42%',
+                    borderRadius: 99,
+                    backgroundColor: n.person.color,
+                    opacity: 0.9,
+                  }}
+                />
               ) : (
                 <Image source={{ uri: n.person.photo }} style={styles.photo} />
               )}
             </Pressable>
             {showLabel ? (
               <Text style={styles.nodeName} numberOfLines={1}>
-                {isGhostToSecond(n.person) ? 'Confidential' : n.person.firstName}
+                {n.person.confidential
+                  ? n.person.profession
+                  : isGhostToSecond(n.person)
+                    ? 'Confidential'
+                    : n.person.firstName}
               </Text>
             ) : null}
           </View>
@@ -828,7 +840,7 @@ const styles = StyleSheet.create({
     color: '#E5E7EB',
     fontSize: 10,
     fontWeight: '700',
-    width: 64,
+    width: 88,
     textAlign: 'center',
     textShadowColor: '#000',
     textShadowRadius: 4,

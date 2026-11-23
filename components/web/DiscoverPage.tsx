@@ -17,6 +17,7 @@ import {
   channelLabel,
   enrichPerson,
   getPerson,
+  isConfidential,
   isGhostToSecond,
   openPreferredChannel,
 } from '@/constants/mockData';
@@ -51,14 +52,14 @@ export default function DiscoverWeb() {
   }, [submitted, query, reach]);
 
   const askForIntro = (person: Person) => {
-    const from = profile.name.split(' ')[0] || 'Surya';
+    const from = profile.name.split(' ')[0] || 'You';
     const target = isGhostToSecond(person) ? 'someone' : person.name;
     requestIntro(person.id, `${from} would like an introduction to ${target}.`);
     router.push('/introductions');
   };
 
   const messageViaPreferred = async (person: Person) => {
-    const from = profile.name.split(' ')[0] || 'Surya';
+    const from = profile.name.split(' ')[0] || 'You';
     const result = await openPreferredChannel(
       person,
       `Hi ${person.firstName}, it's ${from} from MyCircle.`,
@@ -129,18 +130,18 @@ export default function DiscoverWeb() {
                   active && styles.cardActive,
                 ]}
               >
-                {ghost ? (
+                {ghost || person.confidential ? (
                   <View style={styles.ghostPhoto}>
-                    <Text style={styles.ghostMark}>?</Text>
+                    <Text style={styles.ghostMark}>{person.confidential ? '•' : '?'}</Text>
                   </View>
                 ) : (
                   <Image source={{ uri: person.photo }} style={styles.photo} />
                 )}
-                <Text style={[styles.name, ghost && styles.nameGhost]} numberOfLines={1}>
-                  {ghost ? 'Confidential' : person.name}
+                <Text style={[styles.name, (ghost || person.confidential) && styles.nameGhost]} numberOfLines={2}>
+                  {ghost ? 'Confidential' : person.confidential ? person.profession : person.name}
                 </Text>
                 <Text style={styles.meta} numberOfLines={2}>
-                  {ghost ? `Via ${person.via || 'mutual'}` : profession}
+                  {ghost ? `Via ${person.via || 'mutual'}` : person.confidential ? 'Confidential' : profession}
                 </Text>
                 <Text style={styles.path}>
                   {person.degree === 1 ? 'Your connections' : 'Through your circle'}
@@ -191,21 +192,25 @@ function PersonPane({
   return (
     <View style={styles.pane}>
       <View style={styles.paneHead}>
-        {ghost ? (
+        {ghost || isConfidential(person) ? (
           <View style={[styles.panePhoto, styles.ghostPhotoLarge]}>
-            <Text style={styles.ghostMarkLarge}>?</Text>
+            <Text style={styles.ghostMarkLarge}>{isConfidential(person) ? '•' : '?'}</Text>
           </View>
         ) : (
           <Image source={{ uri: person.photo }} style={styles.panePhoto} />
         )}
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={[styles.paneName, ghost && styles.nameGhost]} numberOfLines={2}>
-            {ghost ? 'Confidential' : person.name}
+          <Text style={[styles.paneName, (ghost || isConfidential(person)) && styles.nameGhost]} numberOfLines={2}>
+            {ghost ? 'Confidential' : isConfidential(person) ? person.profession : person.name}
           </Text>
           <Text style={styles.paneMeta} numberOfLines={2}>
-            {ghost ? 'Details hidden' : `${profession}${location ? ` · ${location}` : ''}`}
+            {ghost
+              ? 'Details hidden'
+              : isConfidential(person)
+                ? 'Confidential · through the Founder'
+                : `${profession}${location ? ` · ${location}` : ''}`}
           </Text>
-          {!ghost && person.contactChannel ? (
+          {!ghost && !isConfidential(person) && person.contactChannel ? (
             <Text style={styles.prefers}>Prefers {channelLabel(person.contactChannel)}</Text>
           ) : null}
         </View>

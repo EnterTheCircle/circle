@@ -11,8 +11,10 @@ import {
 import { Avatar, PrimaryButton } from '@/components/ui';
 import {
   NETWORK_STATS,
+  FOUNDER_CONTACTS,
   PEOPLE,
   activeCircle,
+  isConfidential,
   Person,
   enrichPerson,
   getPerson,
@@ -84,7 +86,9 @@ export default function CircleWeb() {
 
   const people = useMemo(() => {
     const max = filterToMaxDegree(filter);
-    return activeCircle().map(enrichPerson)
+    const first = activeCircle();
+    const through = demoMode ? [] : FOUNDER_CONTACTS;
+    return [...first, ...through].map(enrichPerson)
       .filter((p) => p.degree <= max)
       .sort((a, b) => a.degree - b.degree || a.name.localeCompare(b.name));
   }, [filter, demoMode]);
@@ -210,7 +214,11 @@ export default function CircleWeb() {
                     size={72}
                   />
                   <Text style={styles.previewName}>
-                    {preview.id === 'me' ? mePerson.name : preview.name}
+                    {preview.id === 'me'
+                      ? mePerson.name
+                      : isConfidential(preview)
+                        ? preview.profession
+                        : preview.name}
                   </Text>
                   {(preview.id === 'me' ? profile.first10k : false) ? (
                     <View style={styles.first10k}>
@@ -218,8 +226,9 @@ export default function CircleWeb() {
                     </View>
                   ) : null}
                   <Text style={styles.previewMeta}>
-                    {preview.profession}
-                    {preview.location ? ` · ${preview.location}` : ''}
+                    {isConfidential(preview)
+                      ? 'Confidential · through the Founder'
+                      : `${preview.profession}${preview.location ? ` · ${preview.location}` : ''}`}
                   </Text>
                   <Text style={styles.previewDeg}>
                     {preview.id === 'me'
@@ -261,7 +270,9 @@ export default function CircleWeb() {
                           requestIntro(
                             preview.id,
                             `${profile.name.split(' ')[0]} would like an introduction to ${
-                              isGhostToSecond(preview) ? 'someone' : preview.name
+                              isGhostToSecond(preview) || isConfidential(preview)
+                                ? `a ${preview.profession}`
+                                : preview.name
                             }.`
                           );
                           router.push('/introductions');
@@ -280,7 +291,7 @@ export default function CircleWeb() {
             >
               <View style={{ marginBottom: 14 }}>
                 <Text style={styles.sectionLabel}>Your connections</Text>
-                {people.map((p) => {
+                {people.filter((p) => p.degree === 1).map((p) => {
                   const active = focusId === p.id;
                   return (
                     <Pressable
@@ -298,6 +309,32 @@ export default function CircleWeb() {
                         </Text>
                         <Text style={styles.rowMeta} numberOfLines={1}>
                           {p.profession}
+                        </Text>
+                      </View>
+                    </Pressable>
+                  );
+                })}
+                {people.some((p) => isConfidential(p)) ? (
+                  <Text style={[styles.sectionLabel, { marginTop: 12 }]}>Through the Founder</Text>
+                ) : null}
+                {people.filter(isConfidential).map((p) => {
+                  const active = focusId === p.id;
+                  return (
+                    <Pressable
+                      key={p.id}
+                      style={[styles.row, styles.rowThrough, active && styles.rowActive]}
+                      onPress={() => {
+                        setFocusId(p.id);
+                        setPreview(p);
+                      }}
+                    >
+                      <Avatar initials="•" color={p.color} size={40} />
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Text style={styles.rowName} numberOfLines={1}>
+                          {p.profession}
+                        </Text>
+                        <Text style={styles.rowMeta} numberOfLines={1}>
+                          Confidential
                         </Text>
                       </View>
                     </Pressable>
@@ -460,6 +497,10 @@ const styles = StyleSheet.create({
   rowDirect: {
     backgroundColor: 'rgba(34,211,238,0.06)',
     borderColor: 'rgba(34,211,238,0.16)',
+  },
+  rowThrough: {
+    backgroundColor: 'rgba(167,139,250,0.06)',
+    borderColor: 'rgba(167,139,250,0.2)',
   },
   rowInvite: {
     backgroundColor: 'rgba(167,139,250,0.06)',

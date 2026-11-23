@@ -32,6 +32,8 @@ export type Person = {
    * Controlled later via Privacy settings.
    */
   ghostToSecond?: boolean;
+  /** Identity hidden. Profession stays visible. */
+  confidential?: boolean;
 };
 
 /** Stable portrait URLs (no API key). */
@@ -119,8 +121,44 @@ export const FOUNDER: Person = {
 /** Live circle for a signed-in member (orbit + list). */
 export const MY_CIRCLE: Person[] = [FOUNDER];
 
+const PHANTOM = (
+  profession: string,
+  id: string,
+  color: string
+): Person => ({
+  id,
+  name: 'Confidential',
+  firstName: 'Confidential',
+  profession,
+  location: '',
+  interests: [],
+  bio: 'Identity withheld. Profession is visible because they sit in the Founder’s circle.',
+  degree: 2,
+  via: 'Founder of the app',
+  viaId: 'founder',
+  color,
+  initials: '·',
+  photo: '',
+  confidential: true,
+  showProfession: true,
+  showLocation: false,
+});
+
+/** Founder’s circle. Names stay confidential. Professions are public. */
+export const FOUNDER_CONTACTS: Person[] = [
+  PHANTOM('Wealth Manager', 'ph-wealth', '#FDE68A'),
+  PHANTOM('Banker', 'ph-banker', '#67E8F9'),
+  PHANTOM('Sales and Trading Analyst', 'ph-st', '#A78BFA'),
+  PHANTOM('Software Engineer', 'ph-swe', '#34D399'),
+  PHANTOM('Forward Deployment Analyst', 'ph-fda', '#F9A8D4'),
+  PHANTOM('General Counsel', 'ph-counsel', '#FDBA74'),
+  PHANTOM('Venture Investor', 'ph-vc', '#C4B5FD'),
+  PHANTOM('Operator', 'ph-operator', '#93C5FD'),
+];
+
 export const PEOPLE: Person[] = [
   FOUNDER,
+  ...FOUNDER_CONTACTS,
   {
     id: 'misha',
     name: 'Misha Volkov',
@@ -498,7 +536,7 @@ export const INITIAL_NOTIFICATIONS: AppNotification[] = [
   {
     id: 'n1',
     title: 'New professional in your circle',
-    body: 'Surya just connected with an Automotive Specialist in NYC.',
+    body: 'A member just connected with an Automotive Specialist in NYC.',
     time: '2h ago',
     personId: 'david',
     unread: true,
@@ -606,7 +644,11 @@ export function enrichPerson(p: Person): Person {
 
 /** True when this person should appear as Confidential to a 2nd-degree viewer. */
 export function isGhostToSecond(p: Person): boolean {
-  return p.degree === 2 && !!p.ghostToSecond;
+  return p.degree === 2 && !!p.ghostToSecond && !p.confidential;
+}
+
+export function isConfidential(p: Person): boolean {
+  return !!p.confidential;
 }
 
 export function getPerson(id: string): Person | undefined {

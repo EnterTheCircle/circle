@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { MarketCard, MarketingShell } from '@/components/web/MarketingShell';
+import { TREASURY_AGENT_INSTRUCTION } from '@/lib/treasuryInstruction';
 
 const ROWS = [
   { label: 'Community & culture', pct: '40%' },
@@ -27,6 +28,11 @@ export default function TokenomicsPage() {
         ))}
       </View>
 
+      <MarketCard
+        title="Treasury instruction"
+        body={`When a treasury agent is connected, it is told to use ${TREASURY_AGENT_INSTRUCTION.whenConnected.usePercentOfProceeds}% of proceeds to buy back $CIRCLE. No agent is connected in this build, so nothing here places a trade.`}
+        accent="#A78BFA"
+      />
       <MarketCard
         title="Fair framing"
         body="Transparent supply narrative. No fake acquisition proceeds. Product usage is the proof — the token spreads the story."

@@ -70,14 +70,14 @@ function DiscoverNative() {
   const clearSearch = () => setSubmitted('');
 
   const askForIntro = (person: Person) => {
-    const from = profile.name.split(' ')[0] || 'Surya';
+    const from = profile.name.split(' ')[0] || 'You';
     const target = isGhostToSecond(person) ? 'someone' : person.name;
     requestIntro(person.id, `${from} would like an introduction to ${target}.`);
     router.push('/(tabs)/introductions');
   };
 
   const messageViaPreferred = async (person: Person) => {
-    const from = profile.name.split(' ')[0] || 'Surya';
+    const from = profile.name.split(' ')[0] || 'You';
     const msg = `Hi ${person.firstName}, it's ${from} from MyCircle.`;
     const result = await openPreferredChannel(person, msg, {
       subject: `Hello from ${from}`,
