@@ -539,6 +539,24 @@ export default function CoinHomePage() {
             </Pressable>
           ) : null}
 
+          {authMode === 'signin' || authMode === 'signup' ? (
+            <Pressable
+              onPress={async () => {
+                if (busy) return;
+                setBusy(true);
+                try {
+                  await enterDemo();
+                  router.replace('/');
+                } finally {
+                  setBusy(false);
+                }
+              }}
+              style={styles.demoBtn}
+            >
+              <Text style={styles.demoTxt}>See a demo, no account</Text>
+            </Pressable>
+          ) : null}
+
           {authMode === 'forgot' || authMode === 'reset' ? (
             <Pressable
               onPress={() => {
