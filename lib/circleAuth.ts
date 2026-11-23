@@ -1,13 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { api, apiEnabled } from './api';
 
 /**
- * Client-side Circle auth (email + password).
- * Swap this module for Clerk/Supabase/Arcus-style API later without rewriting screens.
- * Password reset emails are simulated until you add an email provider.
+ * Circle auth — uses Render API when EXPO_PUBLIC_API_URL is set,
+ * otherwise local AsyncStorage (offline / demo).
  */
 
 const USERS_KEY = 'circle.auth.users.v1';
 const SESSION_KEY = 'circle.auth.session.v1';
+const TOKEN_KEY = 'circle.auth.token.v1';
 const RESETS_KEY = 'circle.auth.resets.v1';
 
 export type CircleChannel = 'whatsapp' | 'linkedin' | 'email' | 'imessage' | 'discord';
@@ -32,6 +33,7 @@ export type CircleSession = {
   username?: string;
   channel?: CircleChannel;
   credential?: string;
+  token?: string;
 };
 
 type ResetRecord = { email: string; token: string; expiresAt: number };
@@ -68,18 +70,40 @@ async function saveUsers(users: CircleUser[]) {
   await AsyncStorage.setItem(USERS_KEY, JSON.stringify(users));
 }
 
+export async function getApiToken(): Promise<string | null> {
+  try {
+    return (await AsyncStorage.getItem(TOKEN_KEY)) || null;
+  } catch {
+    return null;
+  }
+}
+
+async function setApiToken(token: string | null) {
+  if (token) await AsyncStorage.setItem(TOKEN_KEY, token);
+  else await AsyncStorage.removeItem(TOKEN_KEY);
+}
+
 export async function getSession(): Promise<CircleSession | null> {
   try {
     const raw = await AsyncStorage.getItem(SESSION_KEY);
-    return raw ? (JSON.parse(raw) as CircleSession) : null;
+    if (!raw) return null;
+    const session = JSON.parse(raw) as CircleSession;
+    const token = await getApiToken();
+    return token ? { ...session, token } : session;
   } catch {
     return null;
   }
 }
 
 async function setSession(session: CircleSession | null) {
-  if (session) await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(session));
-  else await AsyncStorage.removeItem(SESSION_KEY);
+  if (session) {
+    const { token, ...rest } = session;
+    await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(rest));
+    if (token) await setApiToken(token);
+  } else {
+    await AsyncStorage.removeItem(SESSION_KEY);
+    await setApiToken(null);
+  }
 }
 
 function checkCredential(channel: CircleChannel, raw: string): string | null {
@@ -102,6 +126,18 @@ function checkCredential(channel: CircleChannel, raw: string): string | null {
   return null;
 }
 
+function sessionFromApiUser(user: Record<string, string>, token: string): CircleSession {
+  return {
+    userId: user.id,
+    email: user.email,
+    name: user.name,
+    username: user.username,
+    channel: user.channel as CircleChannel | undefined,
+    credential: user.credential,
+    token,
+  };
+}
+
 export async function signUp(input: {
   firstName: string;
   lastName: string;
@@ -109,6 +145,7 @@ export async function signUp(input: {
   password: string;
   channel: CircleChannel;
   credential: string;
+  location?: string;
 }): Promise<{ ok: true; session: CircleSession } | { ok: false; error: string }> {
   const firstName = input.firstName.trim();
   const lastName = input.lastName.trim();
@@ -116,6 +153,7 @@ export async function signUp(input: {
   const password = input.password;
   const channel = input.channel;
   const credential = input.credential.trim();
+  const location = (input.location || '').trim();
   const name = `${firstName} ${lastName}`.trim();
 
   if (firstName.length < 1 || lastName.length < 1) return { ok: false, error: 'Enter your first and last name.' };
@@ -125,6 +163,22 @@ export async function signUp(input: {
   if (password.length < 6) return { ok: false, error: 'Password must be at least 6 characters.' };
   const credentialError = checkCredential(channel, credential);
   if (credentialError) return { ok: false, error: credentialError };
+
+  if (apiEnabled) {
+    const res = await api.signup({
+      firstName,
+      lastName,
+      username,
+      password,
+      channel,
+      credential,
+      location: location || 'Unknown',
+    });
+    if (!res.ok) return { ok: false, error: res.error };
+    const session = sessionFromApiUser(res.user, res.token);
+    await setSession(session);
+    return { ok: true, session };
+  }
 
   const users = await loadUsers();
   if (users.some((u) => (u.username || '').toLowerCase() === username || u.email === username)) {
@@ -158,6 +212,15 @@ export async function signIn(input: {
   password: string;
 }): Promise<{ ok: true; session: CircleSession } | { ok: false; error: string }> {
   const key = input.username.trim().toLowerCase().replace(/^@/, '');
+
+  if (apiEnabled) {
+    const res = await api.signin({ username: key, password: input.password });
+    if (!res.ok) return { ok: false, error: res.error };
+    const session = sessionFromApiUser(res.user, res.token);
+    await setSession(session);
+    return { ok: true, session };
+  }
+
   const users = await loadUsers();
   const user = users.find(
     (u) => (u.username || '').toLowerCase() === key || u.email.toLowerCase() === key
@@ -178,6 +241,10 @@ export async function signIn(input: {
 }
 
 export async function signOut() {
+  const token = await getApiToken();
+  if (apiEnabled && token) {
+    await api.signout(token);
+  }
   await setSession(null);
 }
 
@@ -187,9 +254,14 @@ export async function requestPasswordReset(
   const email = emailRaw.trim().toLowerCase();
   if (!email.includes('@')) return { ok: false, error: 'Enter a valid email.' };
 
+  if (apiEnabled) {
+    const res = await api.forgot(email);
+    if (!res.ok) return { ok: false, error: res.error };
+    return { ok: true, message: res.message, demoToken: res.demoToken };
+  }
+
   const users = await loadUsers();
   const user = users.find((u) => u.email === email);
-  // Same message whether or not the account exists (don’t leak)
   const message =
     'If that email has a Circle account, a reset link is ready. It expires in one hour.';
 
@@ -207,7 +279,6 @@ export async function requestPasswordReset(
   resets.push({ email, token, expiresAt: Date.now() + 60 * 60 * 1000 });
   await AsyncStorage.setItem(RESETS_KEY, JSON.stringify(resets));
 
-  // Until SMTP/Clerk is connected, surface token in-app for the demo reset screen
   return { ok: true, message, demoToken: token };
 }
 
@@ -216,6 +287,13 @@ export async function resetPassword(input: {
   password: string;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   if (input.password.length < 6) return { ok: false, error: 'Password must be at least 6 characters.' };
+
+  if (apiEnabled) {
+    const res = await api.reset(input.token, input.password);
+    if (!res.ok) return { ok: false, error: res.error };
+    return { ok: true };
+  }
+
   let resets: ResetRecord[] = [];
   try {
     const raw = await AsyncStorage.getItem(RESETS_KEY);

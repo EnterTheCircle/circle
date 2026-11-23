@@ -23,7 +23,8 @@ Circle maps your real social graph (1st circle + through your circle), lets you 
 
 - [Expo](https://expo.dev) SDK 58 · React Native · Expo Router
 - Web + iOS + Android from one codebase
-- Local demo state (AsyncStorage) — backend coming later
+- Auth API + Postgres on [Render](https://render.com) (`server/` + `render.yaml`)
+- Without `EXPO_PUBLIC_API_URL`, the client falls back to local AsyncStorage
 
 ## Quick start
 
@@ -39,9 +40,26 @@ npx expo start
 npx expo export -p web   # production web bundle → dist/
 ```
 
+## Deploy backend (Render)
+
+Blueprint file: [`render.yaml`](./render.yaml) — creates **circle-db** (Postgres), **circle-api** (Node), and **circle-web** (static).
+
+1. Push this repo to GitHub (already done if you use EnterTheCircle/circle).
+2. Open [Render Dashboard](https://dashboard.render.com) → **New** → **Blueprint**.
+3. Connect the **EnterTheCircle/circle** repo (or your fork).
+4. Confirm it finds `render.yaml` → **Apply** / **Deploy Blueprint**.
+5. Wait until **circle-api** shows Live and `/health` returns `{"ok":true}`.
+6. Open **circle-api** → copy the public URL (e.g. `https://circle-api-xxxx.onrender.com`).
+7. For local testing: copy `.env.example` → `.env.local` and set `EXPO_PUBLIC_API_URL` to that URL.
+8. Sign up in the app — accounts land in Postgres. Create the Founder account yourself (username `Founder`); do not put passwords in git.
+
+Free Postgres expires after 30 days — upgrade before then if you want to keep data.
+
 ## Web
 
 The marketing entry on web is a full-screen **Enter the circle** moment, then the live orbit. Native keeps the phone signup flow.
+
+GitHub Pages stays available at [enterthecircle.github.io/circle](https://enterthecircle.github.io/circle/). After Render is live, prefer the **circle-web** URL from the Blueprint (it bakes in the API URL at build time).
 
 ## License
 

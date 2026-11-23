@@ -242,6 +242,7 @@ export default function CoinHomePage() {
           password,
           channel,
           credential,
+          location: city.trim(),
         });
         if (!res.ok) {
           setAuthError(res.error);

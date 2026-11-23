@@ -1,9 +1,36 @@
-# Circle web — separate from Arcus. Deploy as its own Render Static Site / Web Service.
-# Do not point this at Arcus services.
+# Circle on Render — Blueprint
+# Deploy: Dashboard → New → Blueprint → this repo
+# Separate from any Arcus services.
+
+databases:
+  - name: circle-db
+    plan: free
+    databaseName: circle
+    user: circle
+
 services:
+  - type: web
+    name: circle-api
+    runtime: node
+    rootDir: server
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: circle-db
+          property: connectionString
+      - key: CORS_ORIGIN
+        value: "*"
+
   - type: web
     name: circle-web
     runtime: static
+    plan: free
     buildCommand: npm ci && npx expo export -p web
     staticPublishPath: dist
     routes:
@@ -13,3 +40,8 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22"
+      - key: EXPO_PUBLIC_API_URL
+        fromService:
+          name: circle-api
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
