@@ -51,16 +51,16 @@ const NODES = [
 
 const STORY_STEPS = [
   {
-    title: 'See who you actually know',
-    body: 'Your world as paths — first connections, then the people through them. No follower theater.',
+    title: 'Your people, as an orbit',
+    body: 'First circle close in. Through them, the next ring. No followers. No feed to perform for.',
   },
   {
-    title: 'Find who you need',
-    body: 'Lawyer. Designer. Operator. Search inside your trusted radius — not the open internet.',
+    title: 'Search who you need',
+    body: 'Lawyer in New York. Designer in your city. Only people already connected to someone you trust.',
   },
   {
     title: 'Ask for a warm intro',
-    body: 'The mutual decides. If they vouch, you talk where they already live — their real chat apps.',
+    body: 'Your mutual approves. They share contact if they want — that never auto-adds anyone to your circle.',
   },
 ];
 
@@ -566,32 +566,21 @@ export default function CoinHomePage() {
       >
         <View style={styles.landingTop}>
           <View style={styles.landingNav}>
-            <Pressable
-              onPress={() => router.push('/about')}
-              style={({ pressed }) => [styles.navPill, pressed && styles.navPillPressed]}
-            >
-              <Text style={styles.navPillTxt}>About</Text>
+            <Pressable onPress={() => router.push('/about')} style={styles.navLink}>
+              <Text style={styles.navLinkTxt}>About</Text>
             </Pressable>
-            <Pressable
-              onPress={() => router.push('/tokenomics')}
-              style={({ pressed }) => [styles.navPill, pressed && styles.navPillPressed]}
-            >
-              <Text style={styles.navPillTxt}>Tokenomics</Text>
+            <Text style={styles.navDot}>·</Text>
+            <Pressable onPress={() => router.push('/tokenomics')} style={styles.navLink}>
+              <Text style={styles.navLinkTxt}>Tokenomics</Text>
             </Pressable>
-            <Pressable
-              onPress={() => router.push('/circle-token')}
-              style={({ pressed }) => [styles.navPill, styles.navPillAccent, pressed && styles.navPillPressed]}
-            >
-              <Text style={[styles.navPillTxt, styles.navPillTxtAccent]}>$CIRCLE</Text>
+            <Text style={styles.navDot}>·</Text>
+            <Pressable onPress={() => router.push('/circle-token')} style={styles.navLink}>
+              <Text style={[styles.navLinkTxt, styles.navLinkAccent]}>$CIRCLE</Text>
             </Pressable>
           </View>
 
-          <Text style={styles.brandEyebrow}>ENTER THE</Text>
-          <Text style={styles.brand}>
-            CIR<Text style={styles.brandAccent}>CLE</Text>
-          </Text>
-          <View style={styles.brandRule} />
-          <Text style={styles.line}>Your world, as paths — not posts.</Text>
+          <Text style={styles.brand}>CIRCLE</Text>
+          <Text style={styles.line}>Ask someone you trust.{'\n'}Meet someone you need.</Text>
         </View>
 
         <View style={styles.landingBottom}>
@@ -599,7 +588,7 @@ export default function CoinHomePage() {
             onPress={startEnter}
             style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
           >
-            <Text style={styles.ctaTxt}>Enter the circle</Text>
+            <Text style={styles.ctaTxt}>Enter</Text>
             <Text style={styles.ctaArrow}>→</Text>
           </Pressable>
           <Pressable
@@ -609,7 +598,7 @@ export default function CoinHomePage() {
             }}
             style={styles.demoBtn}
           >
-            <Text style={styles.demoTxt}>See a demo, no account</Text>
+            <Text style={styles.demoTxt}>Tour a sample circle</Text>
           </Pressable>
         </View>
       </Animated.View>
@@ -773,106 +762,79 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
   },
   core: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    borderWidth: 2,
-    borderColor: 'rgba(248,250,252,0.9)',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 1.5,
+    borderColor: 'rgba(165,243,252,0.55)',
     overflow: 'hidden',
     shadowColor: '#22D3EE',
-    shadowOpacity: 0.5,
-    shadowRadius: 28,
+    shadowOpacity: 0.65,
+    shadowRadius: 36,
     zIndex: 1,
   },
   coreImg: { width: '100%', height: '100%' },
   landingUi: {
     ...StyleSheet.absoluteFill,
     justifyContent: 'space-between',
-    paddingTop: 36,
-    paddingBottom: 56,
+    paddingTop: 40,
+    paddingBottom: 52,
     paddingHorizontal: 28,
     zIndex: 3,
   },
-  landingTop: { alignItems: 'center', paddingTop: 8 },
+  landingTop: { alignItems: 'center', paddingTop: 4 },
   landingNav: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 32,
+    gap: 12,
+    marginBottom: 28,
   },
-  navPill: {
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(226,232,240,0.14)',
-    backgroundColor: 'rgba(248,250,252,0.04)',
+  navLink: { paddingVertical: 6, paddingHorizontal: 4 },
+  navLinkTxt: {
+    color: 'rgba(226,232,240,0.55)',
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.4,
   },
-  navPillAccent: {
-    borderColor: 'rgba(34,211,238,0.35)',
-    backgroundColor: 'rgba(34,211,238,0.08)',
-  },
-  navPillPressed: { opacity: 0.8, transform: [{ scale: 0.98 }] },
-  navPillTxt: {
-    color: 'rgba(226,232,240,0.72)',
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-  },
-  navPillTxtAccent: { color: '#67E8F9' },
-  landingBottom: { alignItems: 'center', gap: 14 },
-  demoBtn: { paddingVertical: 8, paddingHorizontal: 12 },
-  demoTxt: { color: 'rgba(226,232,240,0.72)', fontSize: 14, fontWeight: '700' },
-  brandEyebrow: {
-    color: '#67E8F9',
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 4,
-    marginBottom: 10,
-    textAlign: 'center',
+  navLinkAccent: { color: '#67E8F9', fontWeight: '700' },
+  navDot: { color: 'rgba(148,163,184,0.35)', fontSize: 14 },
+  landingBottom: { alignItems: 'center', gap: 16 },
+  demoBtn: { paddingVertical: 6, paddingHorizontal: 12 },
+  demoTxt: {
+    color: 'rgba(148,163,184,0.9)',
+    fontSize: 14,
+    fontWeight: '600',
+    letterSpacing: 0.2,
   },
   brand: {
     color: '#F8FAFC',
-    fontSize: 68,
-    fontWeight: '200',
-    letterSpacing: 16,
-    marginBottom: 14,
-    textAlign: 'center',
-    textShadowColor: 'rgba(34,211,238,0.45)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 28,
-  },
-  brandAccent: {
-    color: '#A5F3FC',
+    fontSize: 72,
     fontWeight: '800',
-    letterSpacing: 16,
-  },
-  brandRule: {
-    width: 56,
-    height: 2,
-    backgroundColor: 'rgba(34,211,238,0.55)',
-    marginBottom: 16,
-    borderRadius: 2,
+    letterSpacing: 14,
+    marginBottom: 18,
+    textAlign: 'center',
+    textShadowColor: 'rgba(34,211,238,0.35)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 32,
   },
   line: {
-    color: '#94A3B8',
-    fontSize: 16,
+    color: 'rgba(226,232,240,0.78)',
+    fontSize: 18,
     textAlign: 'center',
-    maxWidth: 340,
-    lineHeight: 26,
-    letterSpacing: 0.3,
+    maxWidth: 360,
+    lineHeight: 28,
+    letterSpacing: 0.2,
     fontWeight: '400',
   },
   cta: {
     backgroundColor: '#F8FAFC',
-    paddingHorizontal: 40,
-    paddingVertical: 17,
+    paddingHorizontal: 44,
+    paddingVertical: 16,
     borderRadius: 999,
     shadowColor: '#22D3EE',
-    shadowOpacity: 0.4,
-    shadowRadius: 22,
+    shadowOpacity: 0.45,
+    shadowRadius: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
