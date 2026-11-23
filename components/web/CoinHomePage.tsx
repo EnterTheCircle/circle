@@ -95,7 +95,6 @@ export default function CoinHomePage() {
   const storyFade = useRef(new Animated.Value(1)).current;
 
   const stage = Math.min(width * 0.78, height * 0.72, 720);
-  const crest = Math.min(width * 0.46, height * 0.42, 460);
 
   useEffect(() => {
     const spinLoop = Animated.loop(
@@ -559,53 +558,48 @@ export default function CoinHomePage() {
 
   return (
     <View style={styles.page}>
+      <Orbit stage={stage} spin={spin} pulse={pulse} expand={expand} showCore />
+
       <Animated.View
         pointerEvents={phase === 'landing' ? 'auto' : 'none'}
-        style={[styles.landingColumn, { opacity: fadeUi }]}
+        style={[styles.landingUi, { opacity: fadeUi }]}
       >
-        <View style={styles.topBar}>
-          <View style={styles.topBrand}>
-            <Image source={AVATAR} style={styles.topMark} />
-            <Text style={styles.topWord}>CIRCLE</Text>
-          </View>
-        </View>
-
-        <View style={styles.crestSlot}>
-          <View style={[styles.crestFrame, { width: crest, height: crest }]}>
-            <Orbit stage={crest} spin={spin} pulse={pulse} expand={expand} showCore fit />
-          </View>
-        </View>
-
-        <View style={styles.landingBottom}>
-          <Text style={styles.line}>Ask someone you trust.</Text>
-          <Text style={styles.lineSecondary}>Meet someone you need.</Text>
-
+        <View style={styles.landingTop}>
           <View style={styles.landingNav}>
             <Pressable
               onPress={() => router.push('/about')}
-              style={({ pressed }) => [styles.navItem, pressed && styles.navItemPressed]}
+              style={({ pressed }) => [styles.navPill, pressed && styles.navPillPressed]}
             >
-              <Text style={styles.navItemTxt}>About</Text>
+              <Text style={styles.navPillTxt}>About</Text>
             </Pressable>
             <Pressable
               onPress={() => router.push('/tokenomics')}
-              style={({ pressed }) => [styles.navItem, pressed && styles.navItemPressed]}
+              style={({ pressed }) => [styles.navPill, pressed && styles.navPillPressed]}
             >
-              <Text style={styles.navItemTxt}>Tokenomics</Text>
+              <Text style={styles.navPillTxt}>Tokenomics</Text>
             </Pressable>
             <Pressable
               onPress={() => router.push('/circle-token')}
-              style={({ pressed }) => [styles.navItem, styles.navItemAccent, pressed && styles.navItemPressed]}
+              style={({ pressed }) => [styles.navPill, styles.navPillAccent, pressed && styles.navPillPressed]}
             >
-              <Text style={[styles.navItemTxt, styles.navItemTxtAccent]}>$CIRCLE</Text>
+              <Text style={[styles.navPillTxt, styles.navPillTxtAccent]}>$CIRCLE</Text>
             </Pressable>
           </View>
 
+          <Text style={styles.brandEyebrow}>ENTER THE</Text>
+          <Text style={styles.brand}>
+            CIR<Text style={styles.brandAccent}>CLE</Text>
+          </Text>
+          <View style={styles.brandRule} />
+        </View>
+
+        <View style={styles.landingBottom}>
           <Pressable
             onPress={startEnter}
             style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
           >
             <Text style={styles.ctaTxt}>Enter the circle</Text>
+            <Text style={styles.ctaArrow}>→</Text>
           </Pressable>
           <Pressable
             onPress={async () => {
@@ -614,7 +608,7 @@ export default function CoinHomePage() {
             }}
             style={styles.demoBtn}
           >
-            <Text style={styles.demoTxt}>Tour a sample circle</Text>
+            <Text style={styles.demoTxt}>See a demo, no account</Text>
           </Pressable>
         </View>
       </Animated.View>
@@ -809,124 +803,109 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   core: {
-    width: 112,
-    height: 112,
-    borderRadius: 56,
-    borderWidth: 1,
-    borderColor: 'rgba(165,243,252,0.4)',
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    borderWidth: 2,
+    borderColor: 'rgba(248,250,252,0.9)',
     overflow: 'hidden',
     shadowColor: '#22D3EE',
-    shadowOpacity: 0.55,
-    shadowRadius: 48,
+    shadowOpacity: 0.5,
+    shadowRadius: 28,
     zIndex: 1,
   },
   coreImg: { width: '100%', height: '100%' },
-  landingColumn: {
-    flex: 1,
-    width: '100%',
-    paddingTop: 22,
-    paddingBottom: 36,
-    paddingHorizontal: 40,
-    alignItems: 'center',
+  landingUi: {
+    ...StyleSheet.absoluteFill,
+    justifyContent: 'space-between',
+    paddingTop: 36,
+    paddingBottom: 56,
+    paddingHorizontal: 28,
+    zIndex: 3,
   },
-  crestSlot: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-    maxWidth: 1100,
-    alignSelf: 'center',
-    paddingBottom: 8,
-  },
-  topBrand: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  topMark: { width: 52, height: 52, borderRadius: 26 },
-  topWord: {
-    color: '#F8FAFC',
-    fontSize: 22,
-    fontWeight: '700',
-    letterSpacing: 4,
-  },
+  landingTop: { alignItems: 'center', paddingTop: 8 },
   landingNav: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 22,
-    marginBottom: 8,
+    gap: 10,
+    marginBottom: 32,
   },
-  navItem: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    minWidth: 120,
-    alignItems: 'center',
+  navPill: {
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(226,232,240,0.14)',
+    backgroundColor: 'rgba(248,250,252,0.04)',
   },
-  navItemAccent: {},
-  navItemPressed: { opacity: 0.75 },
-  navItemTxt: {
-    color: '#E2E8F0',
-    fontSize: 16,
-    fontWeight: '600',
-    letterSpacing: 0.4,
+  navPillAccent: {
+    borderColor: 'rgba(34,211,238,0.35)',
+    backgroundColor: 'rgba(34,211,238,0.08)',
   },
-  navItemTxtAccent: { color: '#67E8F9', fontWeight: '700' },
-  landingBottom: { alignItems: 'center', gap: 6, paddingTop: 4 },
+  navPillPressed: { opacity: 0.8, transform: [{ scale: 0.98 }] },
+  navPillTxt: {
+    color: 'rgba(226,232,240,0.72)',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+  },
+  navPillTxtAccent: { color: '#67E8F9' },
+  landingBottom: { alignItems: 'center', gap: 14 },
   demoBtn: { paddingVertical: 8, paddingHorizontal: 12 },
-  demoTxt: {
-    color: '#CBD5E1',
-    fontSize: 15,
-    fontWeight: '600',
-    letterSpacing: 0.15,
+  demoTxt: { color: 'rgba(226,232,240,0.72)', fontSize: 14, fontWeight: '700' },
+  brandEyebrow: {
+    color: '#67E8F9',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 4,
+    marginBottom: 10,
+    textAlign: 'center',
   },
   brand: {
     color: '#F8FAFC',
-    fontSize: 64,
+    fontSize: 68,
     fontWeight: '200',
-    letterSpacing: 18,
-    marginBottom: 18,
+    letterSpacing: 16,
+    marginBottom: 14,
     textAlign: 'center',
+    textShadowColor: 'rgba(34,211,238,0.45)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 28,
   },
-  line: {
-    color: '#F8FAFC',
-    fontSize: 21,
-    textAlign: 'center',
-    lineHeight: 32,
-    fontWeight: '500',
-    letterSpacing: 0.2,
+  brandAccent: {
+    color: '#A5F3FC',
+    fontWeight: '800',
+    letterSpacing: 16,
   },
-  lineSecondary: {
-    color: '#E2E8F0',
-    fontSize: 21,
-    textAlign: 'center',
-    lineHeight: 32,
-    fontWeight: '400',
-    letterSpacing: 0.2,
-    marginTop: 2,
+  brandRule: {
+    width: 56,
+    height: 2,
+    backgroundColor: 'rgba(34,211,238,0.55)',
+    borderRadius: 2,
   },
   cta: {
-    backgroundColor: 'rgba(248,250,252,0.96)',
-    paddingHorizontal: 36,
-    paddingVertical: 15,
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 40,
+    paddingVertical: 17,
     borderRadius: 999,
     shadowColor: '#22D3EE',
-    shadowOpacity: 0.28,
-    shadowRadius: 28,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.65)',
+    shadowOpacity: 0.4,
+    shadowRadius: 22,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
   },
   ctaFull: { alignSelf: 'stretch', marginTop: 8 },
   ctaDisabled: { opacity: 0.35 },
-  ctaPressed: { transform: [{ scale: 0.985 }], opacity: 0.92 },
+  ctaPressed: { transform: [{ scale: 0.98 }], opacity: 0.92 },
   ctaTxt: {
     color: '#020617',
-    fontSize: 15,
-    fontWeight: '700',
-    letterSpacing: 0.6,
+    fontSize: 17,
+    fontWeight: '800',
+    letterSpacing: 0.2,
   },
   ctaArrow: {
     color: '#020617',
