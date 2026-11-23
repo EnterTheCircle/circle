@@ -1,4 +1,7 @@
 import { Linking } from 'react-native';
+import { defaultAvatar, FOUNDER_PHOTO } from '@/lib/avatars';
+
+export { defaultAvatar };
 
 export type Degree = 0 | 1 | 2 | 3;
 
@@ -39,12 +42,6 @@ export type Person = {
 /** Stable portrait URLs (no API key). */
 export function portrait(kind: 'men' | 'women', n: number) {
   return `https://randomuser.me/api/portraits/${kind}/${n}.jpg`;
-}
-
-/** Auto-generated default avatar from a name/seed (no API key). */
-export function defaultAvatar(seed: string) {
-  const s = encodeURIComponent((seed || 'circle').trim() || 'circle');
-  return `https://api.dicebear.com/9.x/glass/png?seed=${s}&size=256`;
 }
 
 export function initialsFromName(name: string) {
@@ -114,7 +111,7 @@ export const FOUNDER: Person = {
   degree: 1,
   color: '#A78BFA',
   initials: 'FA',
-  photo: defaultAvatar('founder-of-circle'),
+  photo: FOUNDER_PHOTO,
   verified: true,
 };
 
@@ -138,7 +135,7 @@ const PHANTOM = (
   viaId: 'founder',
   color,
   initials: '·',
-  photo: '',
+  photo: defaultAvatar(id),
   confidential: true,
   showProfession: true,
   showLocation: false,

@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { Glyph, GlyphName } from '@/components/Glyph';
 import { Avatar, Badge, Card } from '@/components/ui';
 import { NETWORK_STATS, channelLabel, defaultAvatar, initialsFromName } from '@/constants/mockData';
+import { First10kMedal } from '@/components/First10kMedal';
 import { Colors, Radii } from '@/constants/theme';
 import { useApp } from '@/context/AppContext';
 
@@ -58,12 +59,10 @@ export default function ProfileWeb() {
           >
             <Text style={styles.changePhoto}>Change photo · or reset to generated</Text>
           </Pressable>
-          <Text style={styles.name}>{profile.name}</Text>
-          {profile.first10k ? (
-            <View style={styles.first10k}>
-              <Text style={styles.first10kText}>First 10k</Text>
-            </View>
-          ) : null}
+          <View style={styles.nameRow}>
+            <Text style={styles.name}>{profile.name}</Text>
+            {profile.first10k ? <First10kMedal size={22} /> : null}
+          </View>
           <Text style={styles.quote}>“Your circle is your world.”</Text>
           <Text style={styles.meta}>
             {profile.location} · {profile.profession}
@@ -173,7 +172,8 @@ const styles = StyleSheet.create({
     borderColor: Colors.bgCard,
   },
   changePhoto: { color: Colors.accent, fontSize: 12, fontWeight: '600', marginTop: 10 },
-  name: { color: Colors.text, fontSize: 24, fontWeight: '800', marginTop: 16 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16 },
+  name: { color: Colors.text, fontSize: 24, fontWeight: '800' },
   first10k: {
     marginTop: 10,
     paddingHorizontal: 12,

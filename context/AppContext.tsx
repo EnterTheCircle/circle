@@ -21,6 +21,7 @@ import {
   setCircleMode,
 } from '@/constants/mockData';
 import { getSession } from '@/lib/circleAuth';
+import { FOUNDER_PHOTO, isGeneratedPhoto } from '@/lib/avatars';
 import { claimLiveWord, getIdentityId, normalizeWord } from '@/lib/identityCode';
 
 const ONBOARDING_KEY = 'mycircle.onboarding.v1';
@@ -99,6 +100,9 @@ type AppContextValue = {
   /** Signed in as the app founder, not a new member named Founder. */
   isAppFounder: boolean;
   recognizeFounder: () => void;
+  /** Show the earned-medal animation once after signup. */
+  badgeCelebrate: boolean;
+  dismissBadge: () => void;
   updateAccount: (patch: Partial<AccountState>) => void;
   profile: ProfileState;
   updateProfile: (patch: Partial<ProfileState>) => void;
@@ -184,6 +188,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [tourStep, setTourStepState] = useState(0);
   const [demoMode, setDemoMode] = useState(false);
   const [isAppFounder, setIsAppFounder] = useState(false);
+  const [badgeCelebrate, setBadgeCelebrate] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -210,8 +215,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (!cancelled && asksRaw) {
           setConnectAsks(JSON.parse(asksRaw) as ConnectAsk[]);
         }
+        const celebrate = await AsyncStorage.getItem('circle.badge.celebrate');
         const guide = await AsyncStorage.getItem('circle.guide.v2');
         const onboarding = raw ? (JSON.parse(raw) as { demo?: boolean; hasSignedUp?: boolean }) : null;
+        if (!cancelled && celebrate !== 'seen' && onboarding?.hasSignedUp && !onboarding.demo) {
+          setBadgeCelebrate(true);
+        }
         if (!cancelled && !guide && onboarding?.hasSignedUp && !onboarding.demo) setTourMode('welcome');
         const profileRaw = await AsyncStorage.getItem(PROFILE_KEY);
         const session = await getSession();
@@ -231,7 +240,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               ...parsed,
               name,
               profession: founderSession ? 'Founder of Circle' : parsed.profession || prev.profession,
-              photo: parsed.photo || defaultAvatar(name),
+              photo:
+                founderSession && isGeneratedPhoto(parsed.photo)
+                  ? FOUNDER_PHOTO
+                  : parsed.photo || defaultAvatar(name),
               first10k: parsed.first10k !== false,
             };
           });
@@ -324,9 +336,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         account: nextAccount,
         demo: false,
       });
+      setBadgeCelebrate(true);
+      void AsyncStorage.setItem('circle.badge.celebrate', '1');
     },
     [persistOnboarding]
   );
+
+  const dismissBadge = useCallback(() => {
+    setBadgeCelebrate(false);
+    void AsyncStorage.setItem('circle.badge.celebrate', 'seen');
+  }, []);
 
   const recognizeFounder = useCallback(() => {
     setIsAppFounder(true);
@@ -334,7 +353,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setCircleMode('founder');
     setProfile((p) => {
       const name = p.name.trim().toLowerCase() === 'founder founder' ? 'Founder' : p.name || 'Founder';
-      const next = { ...p, name, profession: 'Founder of Circle' };
+      const next = {
+        ...p,
+        name,
+        profession: 'Founder of Circle',
+        photo: isGeneratedPhoto(p.photo) ? FOUNDER_PHOTO : p.photo,
+      };
       void AsyncStorage.setItem(PROFILE_KEY, JSON.stringify(next));
       return next;
     });
@@ -589,6 +613,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       enterDemo,
       isAppFounder,
       recognizeFounder,
+      badgeCelebrate,
+      dismissBadge,
       updateAccount,
       profile,
       updateProfile,
@@ -635,6 +661,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       enterDemo,
       isAppFounder,
       recognizeFounder,
+      badgeCelebrate,
+      dismissBadge,
       updateAccount,
       profile,
       updateProfile,

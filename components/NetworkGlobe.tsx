@@ -20,6 +20,8 @@ import {
   isGhostToSecond,
 } from '@/constants/mockData';
 import { Colors } from '@/constants/theme';
+import { avatarSource } from '@/lib/avatars';
+import { First10kMedal } from '@/components/First10kMedal';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 /** Default canvas size (mobile / when no size prop). */
@@ -732,18 +734,12 @@ export function NetworkGlobe({
                 >
                   +
                 </Text>
-              ) : isGhostToSecond(n.person) || n.person.confidential ? (
-                <View
-                  style={{
-                    width: '42%',
-                    height: '42%',
-                    borderRadius: 99,
-                    backgroundColor: n.person.color,
-                    opacity: 0.9,
-                  }}
-                />
+              ) : isGhostToSecond(n.person) ? (
+                <Text style={{ color: '#94A3B8', fontSize: Math.max(10, n.size * 0.32), fontWeight: '700' }}>
+                  ?
+                </Text>
               ) : (
-                <Image source={{ uri: n.person.photo }} style={styles.photo} />
+                <Image source={avatarSource(n.person.photo)} style={styles.photo} />
               )}
             </Pressable>
             {showLabel ? (
@@ -776,16 +772,14 @@ export function NetworkGlobe({
           },
         ]}
       >
-        <Image source={{ uri: focus.photo }} style={styles.photo} />
+        <Image source={avatarSource(focus.photo)} style={styles.photo} />
       </Pressable>
 
       <View style={[styles.centerLabel, { top: cy + coreSize / 2 + 8 }]} pointerEvents="none">
-        <Text style={styles.centerName}>{focus.firstName}</Text>
-        {focusId === 'me' && showFirst10k ? (
-          <View style={styles.first10kBadge}>
-            <Text style={styles.first10kText}>First 10k</Text>
-          </View>
-        ) : null}
+        <View style={styles.nameRow}>
+          <Text style={styles.centerName}>{focus.firstName}</Text>
+          {focusId === 'me' && showFirst10k ? <First10kMedal size={18} /> : null}
+        </View>
         <Text style={styles.centerSub}>
           {focusId === 'me' ? 'Your connections' : 'Tap again for profile'}
         </Text>
@@ -846,6 +840,7 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
   },
   centerLabel: { position: 'absolute', left: 0, right: 0, alignItems: 'center', zIndex: 220 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   centerName: { color: '#fff', fontSize: 16, fontWeight: '800' },
   centerSub: { color: '#94A3B8', fontSize: 11, marginTop: 3 },
   first10kBadge: {

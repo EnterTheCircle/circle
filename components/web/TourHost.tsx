@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { TOUR_STEPS, TourOverlay, WelcomeOverlay } from '@/components/web/CircleGuide';
+import { First10kAward } from '@/components/web/First10kAward';
 import { useApp } from '@/context/AppContext';
 
 const TOPS: Record<string, number> = {
@@ -16,13 +17,19 @@ const TOPS: Record<string, number> = {
 /** Points the tour at Circle, Discover, Add, Introductions, and Profile. */
 export function TourHost() {
   const router = useRouter();
-  const { tourMode, tourStep, profile, startTour, dismissTour, setTourStep } = useApp();
+  const { tourMode, tourStep, profile, startTour, dismissTour, setTourStep, badgeCelebrate, dismissBadge } =
+    useApp();
   const step = TOUR_STEPS[tourStep] || TOUR_STEPS[0];
 
   useEffect(() => {
     if (tourMode !== 'tour') return;
     router.push(step.route as '/');
   }, [tourMode, tourStep, step.route, router]);
+
+  if (badgeCelebrate) {
+    const name = profile.name?.trim().split(/\s+/)[0] || 'You';
+    return <First10kAward name={name} onDone={dismissBadge} />;
+  }
 
   if (tourMode === 'welcome') {
     const name = profile.name?.trim().split(/\s+/)[0] || 'there';

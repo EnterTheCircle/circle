@@ -22,6 +22,7 @@ import {
   openPreferredChannel,
 } from '@/constants/mockData';
 import { Colors, Radii } from '@/constants/theme';
+import { avatarSource } from '@/lib/avatars';
 import { useApp } from '@/context/AppContext';
 
 export default function DiscoverWeb() {
@@ -135,7 +136,7 @@ export default function DiscoverWeb() {
                     <Text style={styles.ghostMark}>{person.confidential ? '•' : '?'}</Text>
                   </View>
                 ) : (
-                  <Image source={{ uri: person.photo }} style={styles.photo} />
+                  <Image source={avatarSource(person.photo)} style={styles.photo} />
                 )}
                 <Text style={[styles.name, (ghost || person.confidential) && styles.nameGhost]} numberOfLines={2}>
                   {ghost ? 'Confidential' : person.confidential ? person.profession : person.name}
@@ -197,7 +198,7 @@ function PersonPane({
             <Text style={styles.ghostMarkLarge}>{isConfidential(person) ? '•' : '?'}</Text>
           </View>
         ) : (
-          <Image source={{ uri: person.photo }} style={styles.panePhoto} />
+          <Image source={avatarSource(person.photo)} style={styles.panePhoto} />
         )}
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={[styles.paneName, (ghost || isConfidential(person)) && styles.nameGhost]} numberOfLines={2}>

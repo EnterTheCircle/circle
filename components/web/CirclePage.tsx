@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { LayoutChangeEvent, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Glyph } from '@/components/Glyph';
+import { First10kMedal } from '@/components/First10kMedal';
 import {
   DegreeFilter,
   NetworkGlobe,
@@ -222,18 +223,16 @@ export default function CircleWeb() {
                     color={preview.color}
                     size={72}
                   />
-                  <Text style={styles.previewName}>
-                    {preview.id === 'me'
-                      ? mePerson.name
-                      : isConfidential(preview)
-                        ? preview.profession
-                        : preview.name}
-                  </Text>
-                  {(preview.id === 'me' ? profile.first10k : false) ? (
-                    <View style={styles.first10k}>
-                      <Text style={styles.first10kText}>First 10k</Text>
-                    </View>
-                  ) : null}
+                  <View style={styles.nameRow}>
+                    <Text style={styles.previewName}>
+                      {preview.id === 'me'
+                        ? mePerson.name
+                        : isConfidential(preview)
+                          ? preview.profession
+                          : preview.name}
+                    </Text>
+                    {preview.id === 'me' && profile.first10k ? <First10kMedal size={18} /> : null}
+                  </View>
                   <Text style={styles.previewMeta}>
                     {isConfidential(preview)
                       ? 'Confidential · through the Founder'
@@ -547,7 +546,8 @@ const styles = StyleSheet.create({
   preview: { alignItems: 'center', paddingTop: 4 },
   backRow: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 2, marginBottom: 14 },
   backTxt: { color: Colors.textMuted, fontSize: 12, fontWeight: '600' },
-  previewName: { color: Colors.text, fontSize: 20, fontWeight: '800', marginTop: 12, textAlign: 'center' },
+  nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 12 },
+  previewName: { color: Colors.text, fontSize: 20, fontWeight: '800', textAlign: 'center' },
   first10k: {
     marginTop: 8,
     paddingHorizontal: 12,

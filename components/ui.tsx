@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Radii, Spacing, Typography } from '@/constants/theme';
+import { avatarSource } from '@/lib/avatars';
 
 export function Screen({ children, style }: { children: React.ReactNode; style?: StyleProp<ViewStyle> }) {
   return <View style={[styles.screen, style]}>{children}</View>;
@@ -57,7 +58,7 @@ export function Avatar({
     >
       {showPhoto ? (
         <Image
-          source={{ uri: photo }}
+          source={avatarSource(photo)}
           style={{ width: size, height: size }}
           onError={() => setFailed(true)}
         />

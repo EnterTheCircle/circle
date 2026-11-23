@@ -5,6 +5,7 @@ import { Glyph, GlyphName } from '@/components/Glyph';
 import { Logo } from '@/components/Logo';
 import { Avatar } from '@/components/ui';
 import { initialsFromName } from '@/constants/mockData';
+import { First10kMedal } from '@/components/First10kMedal';
 import { Colors, Radii } from '@/constants/theme';
 import { useApp } from '@/context/AppContext';
 import { signOut as authSignOut } from '@/lib/circleAuth';
@@ -133,9 +134,12 @@ export function WebSidebar({ tourTarget }: { tourTarget?: 'circle' | 'discover' 
       <Pressable style={styles.user} onPress={() => router.push('/profile')}>
         <Avatar initials={initials} photo={profile.photo} color={Colors.accent} size={36} />
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={styles.userName} numberOfLines={1}>
-            {profile.name}
-          </Text>
+          <View style={styles.nameLine}>
+            <Text style={styles.userName} numberOfLines={1}>
+              {profile.name}
+            </Text>
+            {profile.first10k && !demoMode ? <First10kMedal size={14} /> : null}
+          </View>
           <Text style={styles.userMeta}>
             {demoMode ? 'Demo account' : unreadCount > 0 ? `${unreadCount} updates` : 'Your circle'}
           </Text>
@@ -281,7 +285,8 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: Colors.border,
   },
-  userName: { color: Colors.text, fontWeight: '700', fontSize: 13 },
+  nameLine: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  userName: { color: Colors.text, fontWeight: '700', fontSize: 13, flexShrink: 1 },
   userMeta: { color: Colors.textMuted, fontSize: 11, marginTop: 2 },
   signOut: {
     flexDirection: 'row',
