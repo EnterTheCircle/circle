@@ -1,18 +1,69 @@
-import React, { useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Avatar, Badge, Card, Input, PrimaryButton } from '@/components/ui';
-import { ME, degreeLabel, getPerson } from '@/constants/mockData';
+import { Avatar, PrimaryButton } from '@/components/ui';
+import {
+  Person,
+  degreeLabel,
+  getPerson,
+  isConfidential,
+  isGhostToSecond,
+} from '@/constants/mockData';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useApp } from '@/context/AppContext';
 
+type Panel = 'none' | 'ask' | 'help' | 'introduce';
+
 export default function PersonDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const person = getPerson(String(id));
   const router = useRouter();
-  const { rememberPerson, isSaved, requestIntro, showToast } = useApp();
-  const [reason, setReason] = useState('');
-  const [showIntroForm, setShowIntroForm] = useState(false);
+  const {
+    rememberPerson,
+    isSaved,
+    requestIntro,
+    askHerToIntroduce,
+    offerHelp,
+    introduceHerTo,
+    fetchPersonCircle,
+    networkFirst,
+    showToast,
+  } = useApp();
+
+  const person = getPerson(String(id));
+  const [panel, setPanel] = useState<Panel>('none');
+  const [herCircle, setHerCircle] = useState<Person[]>([]);
+  const [loadingCircle, setLoadingCircle] = useState(false);
+  const [helpNote, setHelpNote] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const myCircle = useMemo(
+    () => networkFirst.filter((p) => p.id !== person?.id),
+    [networkFirst, person?.id]
+  );
+
+  useEffect(() => {
+    if (!person || person.degree !== 1 || panel !== 'ask') return;
+    let cancelled = false;
+    (async () => {
+      setLoadingCircle(true);
+      const people = await fetchPersonCircle(person.id);
+      if (!cancelled) {
+        setHerCircle(people);
+        setLoadingCircle(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [panel, person, fetchPersonCircle]);
 
   if (!person) {
     return (
@@ -24,39 +75,63 @@ export default function PersonDetail() {
   }
 
   const saved = isSaved(person.id);
-  const via = person.viaId ? getPerson(person.viaId) : undefined;
+  const ghost = isGhostToSecond(person);
+  const confidential = isConfidential(person);
+  const first = person.degree === 1;
+  const second = person.degree === 2;
+  const displayName = ghost || confidential ? person.profession : person.name;
+  const firstName = ghost || confidential ? 'them' : person.firstName;
+
+  const run = async (fn: () => Promise<void>, opts?: { skipNav?: boolean }) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await fn();
+      setPanel('none');
+      setHelpNote('');
+      if (!opts?.skipNav) router.push('/introductions');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <ScrollView
       style={styles.screen}
-      contentContainerStyle={{ paddingBottom: 40 }}
+      contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <Image source={{ uri: person.photo }} style={styles.cover} />
-      <View style={styles.content}>
-        <View style={styles.hero}>
-          <View style={styles.avatarWrap}>
-            <Avatar
-              initials={person.initials}
-              color={person.color}
-              size={86}
-              glow
-              photo={person.photo}
-            />
-          </View>
-          {person.verified ? <Badge label="VERIFIED" tone="cyan" /> : null}
-          <Text style={styles.name}>{person.name}</Text>
+      <View style={styles.hero}>
+        <Avatar
+          initials={ghost || confidential ? '?' : person.initials}
+          color={ghost || confidential ? '#64748B' : person.color}
+          size={88}
+          glow
+          photo={ghost || confidential ? undefined : person.photo}
+        />
+        <Text style={styles.name}>{displayName}</Text>
+        {!ghost && !confidential ? (
           <Text style={styles.profession}>{person.profession}</Text>
-          <Text style={styles.location}>{person.location}</Text>
-        </View>
+        ) : (
+          <Text style={styles.profession}>Confidential</Text>
+        )}
+        {person.location ? <Text style={styles.location}>{person.location}</Text> : null}
+        <Text style={styles.path}>
+          {degreeLabel(person.degree)}
+          {person.via ? ` · via ${person.via}` : ''}
+        </Text>
+      </View>
 
-        <Card>
-          <Text style={styles.label}>ABOUT</Text>
+      {!ghost && person.bio ? (
+        <View style={styles.block}>
+          <Text style={styles.label}>About</Text>
           <Text style={styles.body}>{person.bio}</Text>
-        </Card>
+        </View>
+      ) : null}
 
-        <Card style={{ marginTop: 12 }}>
-          <Text style={styles.label}>INTERESTS</Text>
+      {!ghost && person.interests?.length ? (
+        <View style={styles.block}>
+          <Text style={styles.label}>Interests</Text>
           <View style={styles.tags}>
             {person.interests.map((i) => (
               <View key={i} style={styles.tag}>
@@ -64,118 +139,210 @@ export default function PersonDetail() {
               </View>
             ))}
           </View>
-        </Card>
+        </View>
+      ) : null}
 
-        <Card style={{ marginTop: 12 }}>
-          <Text style={styles.label}>CONNECTION PATH</Text>
-          <View style={styles.pathRow}>
-            <Avatar initials={ME.initials} color={Colors.accent} photo={ME.photo} size={40} />
-            <Text style={styles.pathArrow}>→</Text>
-            {via ? (
-              <>
-                <Avatar
-                  initials={via.initials}
-                  color={via.color}
-                  photo={via.photo}
-                  size={40}
-                />
-                <Text style={styles.pathArrow}>→</Text>
-              </>
-            ) : null}
-            <Avatar
-              initials={person.initials}
-              color={person.color}
-              photo={person.photo}
-              size={40}
+      <View style={styles.actions}>
+        {first && !ghost ? (
+          <>
+            <PrimaryButton
+              title={`Ask ${firstName} to introduce you`}
+              onPress={() => setPanel(panel === 'ask' ? 'none' : 'ask')}
             />
-          </View>
-          <Text style={styles.pathVisual}>
-            {degreeLabel(person.degree)}
-            {person.via ? ` · through ${person.via}` : ''}
-          </Text>
-        </Card>
+            <PrimaryButton
+              title="Offer to help"
+              variant="secondary"
+              onPress={() => setPanel(panel === 'help' ? 'none' : 'help')}
+            />
+            <PrimaryButton
+              title={`Introduce ${firstName} to someone`}
+              variant="ghost"
+              onPress={() => setPanel(panel === 'introduce' ? 'none' : 'introduce')}
+            />
+          </>
+        ) : null}
 
-        <View style={{ marginTop: 18, gap: 10 }}>
-          <PrimaryButton title="Request Introduction" onPress={() => setShowIntroForm(true)} />
+        {second ? (
           <PrimaryButton
-            title={saved ? 'Saved for Later' : 'Remember for Later'}
-            variant="secondary"
+            title={`Ask ${person.via?.split(' ')[0] || 'mutual'} for an intro`}
             onPress={() => {
-              if (!saved) rememberPerson(person.id);
-              else showToast('Already in your saved collection');
+              requestIntro(person.id);
+              router.push('/introductions');
+            }}
+          />
+        ) : null}
+
+        <PrimaryButton
+          title={saved ? 'Saved for later' : 'Remember for later'}
+          variant="secondary"
+          onPress={() => {
+            if (!saved) rememberPerson(person.id);
+            else showToast('Already saved');
+          }}
+        />
+      </View>
+
+      {panel === 'ask' ? (
+        <View style={styles.panel}>
+          <Text style={styles.panelTitle}>Who should {firstName} introduce you to?</Text>
+          <Text style={styles.panelHint}>
+            They approve first. Then that person chooses whether to share their preferred contact —
+            sharing contact does not add them to your Circle.
+          </Text>
+          {loadingCircle ? (
+            <ActivityIndicator color={Colors.accent} style={{ marginTop: 16 }} />
+          ) : herCircle.length === 0 ? (
+            <Text style={styles.empty}>No one in their circle is visible yet.</Text>
+          ) : (
+            herCircle.map((t) => {
+              const hide = isConfidential(t) || isGhostToSecond(t);
+              return (
+                <Pressable
+                  key={t.id}
+                  style={styles.pick}
+                  disabled={busy}
+                  onPress={() => run(() => askHerToIntroduce(person, t))}
+                >
+                  <Avatar
+                    initials={hide ? '?' : t.initials}
+                    photo={hide ? undefined : t.photo}
+                    color={hide ? '#64748B' : t.color}
+                    size={40}
+                  />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.pickName}>{hide ? t.profession : t.name}</Text>
+                    <Text style={styles.pickMeta}>
+                      {hide
+                        ? `Confidential${t.location ? ` · ${t.location}` : ''}`
+                        : `${t.profession}${t.location ? ` · ${t.location}` : ''}`}
+                    </Text>
+                  </View>
+                </Pressable>
+              );
+            })
+          )}
+        </View>
+      ) : null}
+
+      {panel === 'help' ? (
+        <View style={styles.panel}>
+          <Text style={styles.panelTitle}>Offer to help {firstName}</Text>
+          <Text style={styles.panelHint}>They’ll get a notification and can accept or decline.</Text>
+          <TextInput
+            value={helpNote}
+            onChangeText={setHelpNote}
+            placeholder="What can you help with?"
+            placeholderTextColor={Colors.textMuted}
+            style={styles.input}
+            multiline
+          />
+          <PrimaryButton
+            title="Send offer"
+            onPress={() => {
+              if (!helpNote.trim()) {
+                showToast('Add a short note');
+                return;
+              }
+              void run(() => offerHelp(person, helpNote));
             }}
           />
         </View>
+      ) : null}
 
-        {showIntroForm ? (
-          <Card style={{ marginTop: 16 }}>
-            <Text style={styles.label}>WHY AN INTRO?</Text>
-            <Input
-              value={reason}
-              onChangeText={setReason}
-              placeholder="Share a short reason…"
-              style={{ marginTop: 10, marginBottom: 12 }}
-            />
-            <PrimaryButton
-              title="Send request"
-              onPress={() => {
-                requestIntro(person.id, reason);
-                setShowIntroForm(false);
-                setReason('');
-                router.push('/(tabs)/introductions');
-              }}
-            />
-            <PrimaryButton
-              title="Cancel"
-              variant="ghost"
-              onPress={() => setShowIntroForm(false)}
-              style={{ marginTop: 8 }}
-            />
-          </Card>
-        ) : null}
-      </View>
+      {panel === 'introduce' ? (
+        <View style={styles.panel}>
+          <Text style={styles.panelTitle}>Introduce {firstName} to someone in your circle</Text>
+          <Text style={styles.panelHint}>
+            {firstName} gets the request. If they accept, that person still must share contact
+            separately — nobody is auto-added to anyone’s 1st circle.
+          </Text>
+          {myCircle.length === 0 ? (
+            <Text style={styles.empty}>Your circle is empty — connect someone first.</Text>
+          ) : (
+            myCircle.map((t) => (
+              <Pressable
+                key={t.id}
+                style={styles.pick}
+                disabled={busy}
+                onPress={() => run(() => introduceHerTo(person, t))}
+              >
+                <Avatar initials={t.initials} photo={t.photo} color={t.color} size={40} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.pickName}>{t.name}</Text>
+                  <Text style={styles.pickMeta}>
+                    {t.profession}
+                    {t.location ? ` · ${t.location}` : ''}
+                  </Text>
+                </View>
+              </Pressable>
+            ))
+          )}
+        </View>
+      ) : null}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.bg },
+  content: { paddingHorizontal: Spacing.xl, paddingTop: 28, paddingBottom: 56, maxWidth: 560, width: '100%', alignSelf: 'center' },
   missing: { flex: 1, backgroundColor: Colors.bg, alignItems: 'center', justifyContent: 'center' },
-  cover: { width: '100%', height: 220 },
-  content: { paddingHorizontal: Spacing.lg, marginTop: -40 },
-  hero: { alignItems: 'center', marginBottom: 22, gap: 8 },
-  avatarWrap: {
-    borderRadius: 48,
-    borderWidth: 3,
-    borderColor: Colors.bg,
-    marginBottom: 4,
-  },
-  name: { color: Colors.text, fontSize: 26, fontWeight: '700', marginTop: 4 },
-  profession: { color: Colors.accent, fontSize: 15, fontWeight: '600' },
+  hero: { alignItems: 'center', marginBottom: 28, gap: 6 },
+  name: { color: Colors.text, fontSize: 28, fontWeight: '700', letterSpacing: -0.6, marginTop: 10 },
+  profession: { color: Colors.textSecondary, fontSize: 15 },
   location: { color: Colors.textMuted, fontSize: 13 },
-  label: { color: Colors.textMuted, fontSize: 11, letterSpacing: 1.4, fontWeight: '700' },
-  body: { color: Colors.textSecondary, marginTop: 8, lineHeight: 21 },
-  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
+  path: { color: Colors.cyan, fontSize: 12, fontWeight: '600', marginTop: 8 },
+  block: { marginBottom: 20 },
+  label: {
+    color: Colors.textMuted,
+    fontSize: 11,
+    letterSpacing: 1.6,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    marginBottom: 8,
+  },
+  body: { color: Colors.textSecondary, lineHeight: 22, fontSize: 15 },
+  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tag: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: Radii.full,
-    backgroundColor: Colors.accentSoft,
+    backgroundColor: Colors.bgElevated,
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  tagText: { color: Colors.accent, fontSize: 12, fontWeight: '600' },
-  pathRow: {
+  tagText: { color: Colors.textSecondary, fontSize: 12, fontWeight: '600' },
+  actions: { gap: 10, marginTop: 8 },
+  panel: {
+    marginTop: 22,
+    padding: 16,
+    borderRadius: Radii.xl,
+    borderWidth: 1,
+    borderColor: Colors.borderStrong,
+    backgroundColor: Colors.bgElevated,
+    gap: 10,
+  },
+  panelTitle: { color: Colors.text, fontSize: 16, fontWeight: '700' },
+  panelHint: { color: Colors.textMuted, fontSize: 13, lineHeight: 19 },
+  empty: { color: Colors.textMuted, marginTop: 8 },
+  pick: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 14,
-    gap: 8,
+    gap: 12,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.border,
   },
-  pathArrow: { color: Colors.textMuted, fontSize: 16 },
-  pathVisual: {
-    color: Colors.cyan,
-    marginTop: 12,
-    fontWeight: '600',
-    fontSize: 13,
+  pickName: { color: Colors.text, fontWeight: '600', fontSize: 14 },
+  pickMeta: { color: Colors.textMuted, fontSize: 12, marginTop: 2 },
+  input: {
+    minHeight: 72,
+    borderWidth: 1,
+    borderColor: Colors.borderStrong,
+    borderRadius: Radii.lg,
+    padding: 12,
+    color: Colors.text,
+    backgroundColor: Colors.bg,
+    textAlignVertical: 'top',
   },
 });

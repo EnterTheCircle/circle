@@ -29,33 +29,7 @@ function IntroductionsNative() {
   const list = intros.filter((i) => i.type === tab);
 
   const approveAndHandoff = async (item: (typeof intros)[number]) => {
-    const target = getPerson(item.toId);
-    respondIntro(item.id, 'accepted');
-
-    if (!target) {
-      router.push({ pathname: '/intro-success', params: { name: item.toName } });
-      return;
-    }
-
-    const bridge = profile.name.split(' ')[0] || ME.firstName;
-    const message = buildBridgeIntroMessage(bridge, item.fromName, target, item.reason);
-    const channel = target.contactChannel || 'mycircle';
-    const result = await openPreferredChannel(target, message, {
-      subject: `Introduction: ${item.fromName} ↔ ${target.name}`,
-    });
-
-    if (result === 'opened') {
-      showToast(`Approved · opening ${channelLabel(channel)}`);
-    } else if (result === 'mycircle') {
-      showToast('Approved · they’ll be notified in MyCircle');
-    } else {
-      showToast(`Approved · ${channelLabel(channel)} not available`);
-    }
-
-    router.push({
-      pathname: '/intro-success',
-      params: { name: item.toName, channel: channelLabel(channel) },
-    });
+    await respondIntro(item.id, 'accept');
   };
 
   const messageTarget = async (toId: string, toName: string) => {
@@ -147,23 +121,24 @@ function IntroductionsNative() {
 
               <Text style={styles.reason}>{item.reason}</Text>
 
-              {tab === 'received' && item.status === 'pending' ? (
+              {tab === 'received' &&
+              (item.status === 'pending' || item.status === 'awaiting_target') ? (
                 <View style={styles.actions}>
                   <PrimaryButton
-                    title="Approve"
+                    title={item.status === 'awaiting_target' ? 'Share contact' : 'Approve'}
                     onPress={() => approveAndHandoff(item)}
                     style={{ flex: 1 }}
                   />
                   <PrimaryButton
                     title="Decline"
                     variant="danger"
-                    onPress={() => respondIntro(item.id, 'declined')}
+                    onPress={() => void respondIntro(item.id, 'decline')}
                     style={{ flex: 1 }}
                   />
                 </View>
               ) : (
                 <View style={styles.actions}>
-                  {item.status === 'accepted' && preferred ? (
+                  {(item.status === 'accepted' || item.status === 'channel_open') && preferred ? (
                     <PrimaryButton
                       title={preferred}
                       onPress={() => messageTarget(item.toId, item.toName)}

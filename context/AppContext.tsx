@@ -30,6 +30,7 @@ import { claimLiveWord, getIdentityId, normalizeWord } from '@/lib/identityCode'
 const ONBOARDING_KEY = 'mycircle.onboarding.v1';
 const PROFILE_KEY = 'mycircle.profile.v1';
 const ASKS_KEY = 'circle.connect.asks.v1';
+const INTROS_KEY = 'circle.intros.v1';
 
 export type ConnectAsk = {
   id: string;
@@ -116,8 +117,17 @@ type AppContextValue = {
   isSaved: (personId: string) => boolean;
   intros: IntroRequest[];
   pendingIntroCount: number;
-  respondIntro: (id: string, status: 'accepted' | 'declined') => void;
-  requestIntro: (personId: string, reason: string) => void;
+  respondIntro: (id: string, action: 'accept' | 'decline') => Promise<void>;
+  /** 2nd-degree: ask mutual to intro you to this person */
+  requestIntro: (personId: string, reason?: string) => void;
+  /** 1st: ask them to intro you to someone in their circle (no why) */
+  askHerToIntroduce: (bridge: Person, target: Person) => Promise<void>;
+  /** 1st: offer help with optional short note */
+  offerHelp: (person: Person, note: string) => Promise<void>;
+  /** 1st: introduce them to someone in your circle (no why) */
+  introduceHerTo: (person: Person, fromMyCircle: Person) => Promise<void>;
+  refreshIntros: () => Promise<void>;
+  fetchPersonCircle: (personId: string) => Promise<Person[]>;
   notifications: AppNotification[];
   markNotificationsRead: () => void;
   unreadCount: number;
@@ -513,33 +523,203 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [saved]
   );
 
-  const respondIntro = useCallback(
-    (id: string, status: 'accepted' | 'declined') => {
-      setIntros((prev) => prev.map((i) => (i.id === id ? { ...i, status } : i)));
-      showToast(status === 'accepted' ? 'Introduction approved' : 'Introduction declined');
+  const persistIntros = useCallback((next: IntroRequest[]) => {
+    setIntros(next);
+    void AsyncStorage.setItem(INTROS_KEY, JSON.stringify(next));
+  }, []);
+
+  const refreshIntros = useCallback(async () => {
+    if (!apiEnabled || demoMode) return;
+    const token = await getApiToken();
+    if (!token) return;
+    const res = await api.intros(token);
+    if (!res.ok) return;
+    persistIntros(res.intros || []);
+  }, [demoMode, persistIntros]);
+
+  const fetchPersonCircle = useCallback(
+    async (personId: string) => {
+      if (demoMode) {
+        const { getNeighbors } = await import('@/constants/mockData');
+        return getNeighbors(personId).filter((p) => p.id !== 'me');
+      }
+      if (!apiEnabled) return [];
+      const token = await getApiToken();
+      if (!token) return [];
+      const res = await api.personCircle(token, personId);
+      if (!res.ok) return [];
+      return (res.people || []) as Person[];
     },
-    [showToast]
+    [demoMode]
+  );
+
+  const respondIntro = useCallback(
+    async (id: string, action: 'accept' | 'decline') => {
+      if (apiEnabled && !demoMode) {
+        const token = await getApiToken();
+        if (token) {
+          const res = await api.respondIntro(token, id, action);
+          if (!res.ok) {
+            showToast(res.error);
+            return;
+          }
+          await refreshIntros();
+          if (action === 'decline') showToast('Introduction declined — they were notified');
+          else if (res.status === 'awaiting_target')
+            showToast('Approved — waiting on them to share contact');
+          else if (res.status === 'channel_open')
+            showToast('Contact shared — still not a Circle connection');
+          else showToast('Done');
+          return;
+        }
+      }
+      persistIntros(
+        intros.map((i) => {
+          if (i.id !== id) return i;
+          if (action === 'decline') return { ...i, status: 'declined' as const };
+          if (i.status === 'pending' && i.kind !== 'offer_help')
+            return { ...i, status: 'awaiting_target' as const };
+          if (i.status === 'awaiting_target')
+            return { ...i, status: 'channel_open' as const, channelRevealed: true };
+          return { ...i, status: 'accepted' as const };
+        })
+      );
+      showToast(action === 'decline' ? 'Introduction declined — they were notified' : 'Updated');
+    },
+    [demoMode, intros, persistIntros, refreshIntros, showToast]
+  );
+
+  const pushIntro = useCallback(
+    async (draft: IntroRequest, apiBody: Record<string, unknown>) => {
+      if (apiEnabled && !demoMode) {
+        const token = await getApiToken();
+        if (token) {
+          const res = await api.createIntro(token, apiBody);
+          if (!res.ok) {
+            showToast(res.error);
+            return;
+          }
+          await refreshIntros();
+          return;
+        }
+      }
+      persistIntros([draft, ...intros]);
+    },
+    [demoMode, intros, persistIntros, refreshIntros, showToast]
   );
 
   const requestIntro = useCallback(
-    (personId: string, reason: string) => {
+    (personId: string, _reason?: string) => {
       const person = getPerson(personId);
       if (!person) return;
       const mutual = person.via || 'Mutual friend';
-      const newIntro: IntroRequest = {
+      const draft: IntroRequest = {
         id: `intro-${Date.now()}`,
         type: 'sent',
-        fromName: 'You',
-        toName: person.name,
+        kind: 'ask_bridge',
+        fromName: profile.name || 'You',
+        toName: person.confidential ? person.profession : person.name,
         toId: personId,
-        reason: reason || `I'd like an introduction to ${person.firstName}.`,
+        bridgeName: mutual,
+        reason: '',
         mutual,
         status: 'pending',
+        targetConfidential: !!person.confidential || person.degree === 2,
       };
-      setIntros((prev) => [newIntro, ...prev]);
+      void pushIntro(draft, {
+        kind: 'ask_bridge',
+        toId: personId,
+        toName: draft.toName,
+        bridgeName: mutual,
+        targetConfidential: draft.targetConfidential,
+      });
       showToast(`Intro requested · waiting on ${mutual.split(' ')[0]}`);
     },
-    [showToast]
+    [profile.name, pushIntro, showToast]
+  );
+
+  const askHerToIntroduce = useCallback(
+    async (bridge: Person, target: Person) => {
+      const draft: IntroRequest = {
+        id: `intro-${Date.now()}`,
+        type: 'sent',
+        kind: 'ask_her_circle',
+        fromName: profile.name || 'You',
+        toName: target.confidential ? target.profession : target.name,
+        toId: target.id,
+        bridgeName: bridge.name,
+        bridgeId: bridge.id,
+        reason: '',
+        mutual: bridge.name,
+        status: 'pending',
+        targetConfidential: !!target.confidential || target.degree >= 2,
+      };
+      await pushIntro(draft, {
+        kind: 'ask_her_circle',
+        toId: target.id,
+        toName: draft.toName,
+        bridgeId: bridge.id,
+        bridgeName: bridge.name,
+        targetConfidential: draft.targetConfidential,
+      });
+      showToast(`Asked ${bridge.firstName} to introduce you`);
+    },
+    [profile.name, pushIntro, showToast]
+  );
+
+  const offerHelp = useCallback(
+    async (person: Person, note: string) => {
+      const draft: IntroRequest = {
+        id: `intro-${Date.now()}`,
+        type: 'sent',
+        kind: 'offer_help',
+        fromName: profile.name || 'You',
+        toName: person.name,
+        toId: person.id,
+        bridgeName: person.name,
+        bridgeId: person.id,
+        reason: note.trim(),
+        mutual: person.name,
+        status: 'pending',
+      };
+      await pushIntro(draft, {
+        kind: 'offer_help',
+        toId: person.id,
+        toName: person.name,
+        bridgeId: person.id,
+        bridgeName: person.name,
+        reason: note.trim(),
+      });
+      showToast(`Offer sent to ${person.firstName}`);
+    },
+    [profile.name, pushIntro, showToast]
+  );
+
+  const introduceHerTo = useCallback(
+    async (person: Person, fromMyCircle: Person) => {
+      const draft: IntroRequest = {
+        id: `intro-${Date.now()}`,
+        type: 'sent',
+        kind: 'introduce_her',
+        fromName: profile.name || 'You',
+        toName: fromMyCircle.name,
+        toId: fromMyCircle.id,
+        bridgeName: person.name,
+        bridgeId: person.id,
+        reason: '',
+        mutual: person.name,
+        status: 'pending',
+      };
+      await pushIntro(draft, {
+        kind: 'introduce_her',
+        toId: fromMyCircle.id,
+        toName: fromMyCircle.name,
+        bridgeId: person.id,
+        bridgeName: person.name,
+      });
+      showToast(`Offered to introduce ${person.firstName} to ${fromMyCircle.firstName}`);
+    },
+    [profile.name, pushIntro, showToast]
   );
 
   const markNotificationsRead = useCallback(() => {
@@ -651,9 +831,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
 
   const pendingIntroCount = useMemo(
-    () => intros.filter((i) => i.type === 'received' && i.status === 'pending').length,
+    () =>
+      intros.filter(
+        (i) =>
+          i.type === 'received' && (i.status === 'pending' || i.status === 'awaiting_target')
+      ).length,
     [intros]
   );
+
+  useEffect(() => {
+    if (!onboardingReady || !hasSignedUp || demoMode) return;
+    void refreshIntros();
+  }, [onboardingReady, hasSignedUp, demoMode, refreshIntros]);
 
   const value = useMemo(
     () => ({
@@ -683,6 +872,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       pendingIntroCount,
       respondIntro,
       requestIntro,
+      askHerToIntroduce,
+      offerHelp,
+      introduceHerTo,
+      refreshIntros,
+      fetchPersonCircle,
       notifications,
       markNotificationsRead,
       unreadCount,
@@ -734,6 +928,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       pendingIntroCount,
       respondIntro,
       requestIntro,
+      askHerToIntroduce,
+      offerHelp,
+      introduceHerTo,
+      refreshIntros,
+      fetchPersonCircle,
       notifications,
       markNotificationsRead,
       unreadCount,

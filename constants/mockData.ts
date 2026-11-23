@@ -63,15 +63,43 @@ export type SavedCategory =
   | 'Sports & Hobbies'
   | 'Other';
 
+/**
+ * Intro loops:
+ * - ask_bridge: 2nd-degree — ask mutual to intro you TO this person
+ * - ask_her_circle: 1st — ask them to intro you to someone in THEIR 1st
+ * - offer_help: 1st — offer help (note only)
+ * - introduce_her: 1st — offer someone from YOUR 1st to them
+ *
+ * Channel reveal ≠ Circle 1st connection. Target can share contact while staying out of your orbit.
+ */
+export type IntroKind = 'ask_bridge' | 'ask_her_circle' | 'offer_help' | 'introduce_her';
+
+export type IntroStatus =
+  | 'pending'
+  | 'awaiting_target'
+  | 'channel_open'
+  | 'accepted'
+  | 'declined';
+
 export type IntroRequest = {
   id: string;
   type: 'received' | 'sent';
+  kind: IntroKind;
   fromName: string;
+  fromId?: string;
+  /** Person you want to meet / who receives the offer */
   toName: string;
   toId: string;
+  /** Bridge (e.g. Misha) when asking through someone */
+  bridgeName?: string;
+  bridgeId?: string;
+  /** Optional note — only used for offer_help */
   reason: string;
   mutual: string;
-  status: 'pending' | 'accepted' | 'declined';
+  status: IntroStatus;
+  /** Target shared preferred contact — still not a 1st-circle connection */
+  channelRevealed?: boolean;
+  targetConfidential?: boolean;
 };
 
 export type AppNotification = {

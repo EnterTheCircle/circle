@@ -120,4 +120,25 @@ export const api = {
         action?: string;
       }[];
     }>('/me/notifications', { token }),
+  personCircle: (token: string, personId: string) =>
+    request<{ people: import('@/constants/mockData').Person[] }>(`/people/${personId}/circle`, {
+      token,
+    }),
+  createIntro: (
+    token: string,
+    body: Record<string, unknown>
+  ) =>
+    request<{ id: string }>('/intros', {
+      method: 'POST',
+      token,
+      body: JSON.stringify(body),
+    }),
+  intros: (token: string) =>
+    request<{ intros: import('@/constants/mockData').IntroRequest[] }>('/me/intros', { token }),
+  respondIntro: (token: string, id: string, action: 'accept' | 'decline') =>
+    request<{ status: string; channelRevealed?: boolean }>(`/intros/${id}/respond`, {
+      method: 'POST',
+      token,
+      body: JSON.stringify({ action }),
+    }),
 };

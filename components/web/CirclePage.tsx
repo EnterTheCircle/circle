@@ -307,16 +307,15 @@ export default function CircleWeb() {
                         title={`Ask ${preview.via?.split(' ')[0] || 'mutual'} for intro`}
                         variant={isGhostToSecond(preview) ? 'primary' : 'ghost'}
                         onPress={() => {
-                          requestIntro(
-                            preview.id,
-                            `${profile.name.split(' ')[0]} would like an introduction to ${
-                              isGhostToSecond(preview) || isConfidential(preview)
-                                ? `a ${preview.profession}`
-                                : preview.name
-                            }.`
-                          );
+                          requestIntro(preview.id);
                           router.push('/introductions');
                         }}
+                      />
+                    ) : preview.degree === 1 && !isGhostToSecond(preview) ? (
+                      <PrimaryButton
+                        title="Ask · help · introduce"
+                        variant="ghost"
+                        onPress={() => router.push(`/person/${preview.id}`)}
                       />
                     ) : null}
                   </>

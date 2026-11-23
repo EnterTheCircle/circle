@@ -14,6 +14,7 @@ import {
   findFounder,
   linkUsers,
   networkForUser,
+  rowToPerson,
 } from './people.js';
 
 const app = express();
@@ -342,6 +343,250 @@ app.get('/me/network', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ ok: false, error: 'Network failed.' });
+  }
+});
+
+/** 1sts of a person you’re already connected to (for “ask them to intro you”). */
+app.get('/people/:id/circle', async (req, res) => {
+  try {
+    const user = await userFromAuth(req);
+    if (!user) return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    const personId = String(req.params.id || '');
+    if (!personId) return res.status(400).json({ ok: false, error: 'Missing person.' });
+
+    const link = await query(
+      `SELECT 1 FROM connections WHERE user_id = $1 AND person_id = $2 LIMIT 1`,
+      [user.id, personId]
+    );
+    if (!link.rows.length && String(user.username).toLowerCase() !== 'founder') {
+      return res.status(403).json({ ok: false, error: 'Only available for people in your circle.' });
+    }
+
+    const { rows } = await query(
+      `SELECT u.id, u.username, u.name, u.first_name, u.last_name, u.channel, u.credential,
+              COALESCE(p.location, '') AS location,
+              COALESCE(p.profession, 'Member') AS profession,
+              COALESCE(p.bio, '') AS bio,
+              COALESCE(p.photo, '') AS photo,
+              COALESCE(p.interests, '[]'::jsonb) AS interests
+       FROM connections c
+       JOIN users u ON u.id = c.person_id
+       LEFT JOIN profiles p ON p.user_id = u.id
+       WHERE c.user_id = $1 AND u.id <> $2
+       ORDER BY u.created_at ASC`,
+      [personId, user.id]
+    );
+
+    res.json({
+      ok: true,
+      people: rows.map((r) => rowToPerson(r, 2, undefined)),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'Circle lookup failed.' });
+  }
+});
+
+app.post('/intros', async (req, res) => {
+  try {
+    const user = await userFromAuth(req);
+    if (!user) return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    const kind = String(req.body.kind || 'ask_bridge');
+    const toId = String(req.body.toId || '');
+    const toName = String(req.body.toName || 'Someone');
+    const bridgeId = req.body.bridgeId ? String(req.body.bridgeId) : null;
+    const bridgeName = String(req.body.bridgeName || '');
+    const reason = String(req.body.reason || '');
+    const targetConfidential = !!req.body.targetConfidential;
+    const id = newId('intro');
+
+    await query(
+      `INSERT INTO intro_requests
+        (id, user_id, type, kind, from_name, from_id, to_name, to_id, bridge_name, bridge_id, reason, mutual, status, target_confidential)
+       VALUES ($1,$2,'sent',$3,$4,$5,$6,$7,$8,$9,$10,$11,'pending',$12)`,
+      [
+        id,
+        user.id,
+        kind,
+        user.name,
+        user.id,
+        toName,
+        toId,
+        bridgeName,
+        bridgeId,
+        reason,
+        bridgeName || 'Mutual',
+        targetConfidential,
+      ]
+    );
+
+    // Notify the right person
+    const notifyUserId =
+      kind === 'ask_her_circle' || kind === 'offer_help' || kind === 'introduce_her'
+        ? bridgeId || toId
+        : bridgeId;
+    if (notifyUserId) {
+      const titles = {
+        ask_her_circle: 'Intro request',
+        offer_help: 'Offer to help',
+        introduce_her: 'Intro offer',
+        ask_bridge: 'Intro request',
+      };
+      const bodies = {
+        ask_her_circle: `${user.name} wants you to introduce them to ${toName}.`,
+        offer_help: `${user.name} offered to help${reason ? `: ${reason}` : '.'}`,
+        introduce_her: `${user.name} wants to introduce you to ${toName}.`,
+        ask_bridge: `${user.name} asked you for an intro to ${toName}.`,
+      };
+      await query(
+        `INSERT INTO notifications (id, user_id, title, body, time_label, person_id, unread, action, ask_id)
+         VALUES ($1,$2,$3,$4,'Just now',$5,TRUE,'intro',$6)`,
+        [newId('n'), notifyUserId, titles[kind] || 'Intro', bodies[kind] || '', user.id, id]
+      );
+    }
+
+    res.json({ ok: true, id });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'Could not create intro.' });
+  }
+});
+
+app.get('/me/intros', async (req, res) => {
+  try {
+    const user = await userFromAuth(req);
+    if (!user) return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    const { rows } = await query(
+      `SELECT * FROM intro_requests
+       WHERE user_id = $1 OR bridge_id = $1 OR to_id = $1 OR from_id = $1
+       ORDER BY created_at DESC
+       LIMIT 80`,
+      [user.id]
+    );
+    const intros = rows.map((r) => {
+      let type = 'sent';
+      if (r.bridge_id === user.id || (r.kind === 'offer_help' && r.to_id === user.id)) type = 'received';
+      if (r.status === 'awaiting_target' && r.to_id === user.id) type = 'received';
+      return {
+        id: r.id,
+        type,
+        kind: r.kind,
+        fromName: r.from_name,
+        fromId: r.from_id,
+        toName: r.to_name,
+        toId: r.to_id,
+        bridgeName: r.bridge_name,
+        bridgeId: r.bridge_id,
+        reason: r.reason,
+        mutual: r.mutual,
+        status: r.status,
+        channelRevealed: r.channel_revealed,
+        targetConfidential: r.target_confidential,
+      };
+    });
+    res.json({ ok: true, intros });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'Intros failed.' });
+  }
+});
+
+app.post('/intros/:id/respond', async (req, res) => {
+  try {
+    const user = await userFromAuth(req);
+    if (!user) return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    const action = String(req.body.action || '');
+    const { rows } = await query(`SELECT * FROM intro_requests WHERE id = $1`, [req.params.id]);
+    const intro = rows[0];
+    if (!intro) return res.status(404).json({ ok: false, error: 'Not found' });
+
+    const isBridge = intro.bridge_id === user.id || (intro.kind === 'offer_help' && intro.to_id === user.id);
+    const isTarget = intro.to_id === user.id;
+
+    if (action === 'decline') {
+      await query(`UPDATE intro_requests SET status = 'declined' WHERE id = $1`, [intro.id]);
+      const notifyIds = [intro.from_id, intro.bridge_id].filter((id) => id && id !== user.id);
+      for (const nid of [...new Set(notifyIds)]) {
+        await query(
+          `INSERT INTO notifications (id, user_id, title, body, time_label, unread, ask_id)
+           VALUES ($1,$2,'Intro declined',$3,'Just now',TRUE,$4)`,
+          [
+            newId('n'),
+            nid,
+            isTarget
+              ? `${user.name} declined sharing contact for the intro.`
+              : `${user.name} declined the introduction request.`,
+            intro.id,
+          ]
+        );
+      }
+      return res.json({ ok: true, status: 'declined' });
+    }
+
+    if (action === 'accept' && isBridge && intro.status === 'pending') {
+      if (intro.kind === 'offer_help') {
+        await query(`UPDATE intro_requests SET status = 'accepted' WHERE id = $1`, [intro.id]);
+        if (intro.from_id) {
+          await query(
+            `INSERT INTO notifications (id, user_id, title, body, time_label, unread, ask_id)
+             VALUES ($1,$2,'Offer accepted',$3,'Just now',TRUE,$4)`,
+            [newId('n'), intro.from_id, `${user.name} accepted your offer to help.`, intro.id]
+          );
+        }
+        return res.json({ ok: true, status: 'accepted' });
+      }
+      // Bridge accepted → ask target to share channel (not a Circle connection)
+      await query(`UPDATE intro_requests SET status = 'awaiting_target' WHERE id = $1`, [intro.id]);
+      await query(
+        `INSERT INTO notifications (id, user_id, title, body, time_label, unread, action, ask_id)
+         VALUES ($1,$2,'Intro waiting on you',$3,'Just now',TRUE,'intro',$4)`,
+        [
+          newId('n'),
+          intro.to_id,
+          `${user.name} wants to introduce you to ${intro.from_name}. Accept to share your preferred contact — this does not add them to your Circle.`,
+          intro.id,
+        ]
+      );
+      if (intro.from_id) {
+        await query(
+          `INSERT INTO notifications (id, user_id, title, body, time_label, unread, ask_id)
+           VALUES ($1,$2,'Bridge approved',$3,'Just now',TRUE,$4)`,
+          [
+            newId('n'),
+            intro.from_id,
+            `${user.name} approved — waiting on ${intro.to_name} to share contact.`,
+            intro.id,
+          ]
+        );
+      }
+      return res.json({ ok: true, status: 'awaiting_target' });
+    }
+
+    if (action === 'accept' && isTarget && intro.status === 'awaiting_target') {
+      await query(
+        `UPDATE intro_requests SET status = 'channel_open', channel_revealed = TRUE WHERE id = $1`,
+        [intro.id]
+      );
+      const notifyIds = [intro.from_id, intro.bridge_id].filter(Boolean);
+      for (const nid of [...new Set(notifyIds)]) {
+        await query(
+          `INSERT INTO notifications (id, user_id, title, body, time_label, unread, ask_id)
+           VALUES ($1,$2,'Contact shared',$3,'Just now',TRUE,$4)`,
+          [
+            newId('n'),
+            nid,
+            `${intro.to_name} shared their preferred contact. They’re still not in your 1st circle unless you Connect.`,
+            intro.id,
+          ]
+        );
+      }
+      return res.json({ ok: true, status: 'channel_open', channelRevealed: true });
+    }
+
+    return res.status(400).json({ ok: false, error: 'Invalid action for this intro.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'Respond failed.' });
   }
 });
 

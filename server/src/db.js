@@ -57,14 +57,27 @@ export async function migrate() {
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       type TEXT NOT NULL,
+      kind TEXT NOT NULL DEFAULT 'ask_bridge',
       from_name TEXT NOT NULL,
+      from_id TEXT,
       to_name TEXT NOT NULL,
       to_id TEXT NOT NULL,
+      bridge_name TEXT NOT NULL DEFAULT '',
+      bridge_id TEXT,
       reason TEXT NOT NULL DEFAULT '',
       mutual TEXT NOT NULL DEFAULT '',
       status TEXT NOT NULL DEFAULT 'pending',
+      channel_revealed BOOLEAN NOT NULL DEFAULT FALSE,
+      target_confidential BOOLEAN NOT NULL DEFAULT FALSE,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+
+    ALTER TABLE intro_requests ADD COLUMN IF NOT EXISTS kind TEXT NOT NULL DEFAULT 'ask_bridge';
+    ALTER TABLE intro_requests ADD COLUMN IF NOT EXISTS from_id TEXT;
+    ALTER TABLE intro_requests ADD COLUMN IF NOT EXISTS bridge_name TEXT NOT NULL DEFAULT '';
+    ALTER TABLE intro_requests ADD COLUMN IF NOT EXISTS bridge_id TEXT;
+    ALTER TABLE intro_requests ADD COLUMN IF NOT EXISTS channel_revealed BOOLEAN NOT NULL DEFAULT FALSE;
+    ALTER TABLE intro_requests ADD COLUMN IF NOT EXISTS target_confidential BOOLEAN NOT NULL DEFAULT FALSE;
 
     CREATE TABLE IF NOT EXISTS notifications (
       id TEXT PRIMARY KEY,
