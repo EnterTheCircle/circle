@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "MyCircle",
+    "name": "Circle",
     "slug": "mycircle",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -24,8 +24,8 @@
       "bundler": "metro",
       "output": "single",
       "favicon": "./assets/images/favicon.png",
-      "name": "MyCircle",
-      "shortName": "MyCircle",
+      "name": "Circle",
+      "shortName": "Circle",
       "description": "Warm intros through people you already trust — not cold DMs.",
       "themeColor": "#050508",
       "backgroundColor": "#050508"
