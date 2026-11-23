@@ -95,6 +95,7 @@ export default function CoinHomePage() {
   const storyFade = useRef(new Animated.Value(1)).current;
 
   const stage = Math.min(width * 0.78, height * 0.72, 720);
+  const crest = Math.min(width * 0.46, height * 0.42, 460);
 
   useEffect(() => {
     const spinLoop = Animated.loop(
@@ -558,15 +559,9 @@ export default function CoinHomePage() {
 
   return (
     <View style={styles.page}>
-      <Orbit stage={stage} spin={spin} pulse={pulse} expand={expand} showCore />
-
-      {/* Soft atmosphere behind the orbit */}
-      <View pointerEvents="none" style={styles.glow} />
-      <View pointerEvents="none" style={styles.vignette} />
-
       <Animated.View
         pointerEvents={phase === 'landing' ? 'auto' : 'none'}
-        style={[styles.landingUi, { opacity: fadeUi }]}
+        style={[styles.landingColumn, { opacity: fadeUi }]}
       >
         <View style={styles.topBar}>
           <View style={styles.topBrand}>
@@ -575,13 +570,16 @@ export default function CoinHomePage() {
           </View>
         </View>
 
-        <View style={styles.heroCopy}>
-          <Text style={styles.brand}>CIRCLE</Text>
-          <Text style={styles.line}>Ask someone you trust.</Text>
-          <Text style={styles.lineSecondary}>Meet someone you need.</Text>
+        <View style={styles.crestSlot}>
+          <View style={[styles.crestFrame, { width: crest, height: crest }]}>
+            <Orbit stage={crest} spin={spin} pulse={pulse} expand={expand} showCore fit />
+          </View>
         </View>
 
         <View style={styles.landingBottom}>
+          <Text style={styles.line}>Ask someone you trust.</Text>
+          <Text style={styles.lineSecondary}>Meet someone you need.</Text>
+
           <View style={styles.landingNav}>
             <Pressable
               onPress={() => router.push('/about')}
@@ -633,6 +631,7 @@ function Orbit({
   expand,
   muted,
   showCore,
+  fit,
 }: {
   stage: number;
   spin: Animated.Value;
@@ -640,6 +639,7 @@ function Orbit({
   expand: Animated.Value;
   muted?: boolean;
   showCore?: boolean;
+  fit?: boolean;
 }) {
   const rotate = spin.interpolate({
     inputRange: [0, 1],
@@ -668,7 +668,11 @@ function Orbit({
   return (
     <Animated.View
       pointerEvents="none"
-      style={[styles.stage, { width: stage, height: stage, opacity: fadeOut }]}
+      style={[
+        styles.stage,
+        fit && styles.stageFit,
+        { width: stage, height: stage, opacity: fadeOut },
+      ]}
     >
       <Animated.View
         style={[
@@ -751,6 +755,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  stageFit: {
+    top: 0,
+    left: 0,
+  },
+  crestFrame: {
+    position: 'relative',
+  },
   ring: {
     position: 'absolute',
     borderWidth: 1.5,
@@ -798,9 +809,9 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   core: {
-    width: 148,
-    height: 148,
-    borderRadius: 74,
+    width: 112,
+    height: 112,
+    borderRadius: 56,
     borderWidth: 1,
     borderColor: 'rgba(165,243,252,0.4)',
     overflow: 'hidden',
@@ -810,36 +821,44 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   coreImg: { width: '100%', height: '100%' },
-  landingUi: {
-    ...StyleSheet.absoluteFill,
-    justifyContent: 'space-between',
-    paddingTop: 28,
-    paddingBottom: 48,
-    paddingHorizontal: 36,
-    zIndex: 3,
+  landingColumn: {
+    flex: 1,
+    width: '100%',
+    paddingTop: 22,
+    paddingBottom: 36,
+    paddingHorizontal: 40,
+    alignItems: 'center',
+  },
+  crestSlot: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
   },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    maxWidth: 1080,
+    maxWidth: 1100,
     alignSelf: 'center',
+    paddingBottom: 8,
   },
-  topBrand: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  topMark: { width: 32, height: 32, borderRadius: 16 },
+  topBrand: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  topMark: { width: 52, height: 52, borderRadius: 26 },
   topWord: {
     color: '#F8FAFC',
-    fontSize: 15,
-    fontWeight: '800',
-    letterSpacing: 3.4,
+    fontSize: 22,
+    fontWeight: '700',
+    letterSpacing: 4,
   },
   landingNav: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 6,
+    gap: 8,
+    marginTop: 22,
+    marginBottom: 8,
   },
   navItem: {
     paddingHorizontal: 20,
@@ -856,11 +875,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
   },
   navItemTxtAccent: { color: '#67E8F9', fontWeight: '700' },
-  heroCopy: {
-    alignItems: 'center',
-    marginTop: -24,
-  },
-  landingBottom: { alignItems: 'center', gap: 14 },
+  landingBottom: { alignItems: 'center', gap: 6, paddingTop: 4 },
   demoBtn: { paddingVertical: 8, paddingHorizontal: 12 },
   demoTxt: {
     color: '#CBD5E1',
