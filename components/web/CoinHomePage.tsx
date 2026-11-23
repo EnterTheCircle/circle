@@ -560,27 +560,36 @@ export default function CoinHomePage() {
     <View style={styles.page}>
       <Orbit stage={stage} spin={spin} pulse={pulse} expand={expand} showCore />
 
+      {/* Soft atmosphere behind the orbit */}
+      <View pointerEvents="none" style={styles.glow} />
+      <View pointerEvents="none" style={styles.vignette} />
+
       <Animated.View
         pointerEvents={phase === 'landing' ? 'auto' : 'none'}
         style={[styles.landingUi, { opacity: fadeUi }]}
       >
-        <View style={styles.landingTop}>
+        <View style={styles.topBar}>
+          <View style={styles.topBrand}>
+            <Image source={AVATAR} style={styles.topMark} />
+            <Text style={styles.topWord}>CIRCLE</Text>
+          </View>
           <View style={styles.landingNav}>
             <Pressable onPress={() => router.push('/about')} style={styles.navLink}>
               <Text style={styles.navLinkTxt}>About</Text>
             </Pressable>
-            <Text style={styles.navDot}>·</Text>
             <Pressable onPress={() => router.push('/tokenomics')} style={styles.navLink}>
               <Text style={styles.navLinkTxt}>Tokenomics</Text>
             </Pressable>
-            <Text style={styles.navDot}>·</Text>
             <Pressable onPress={() => router.push('/circle-token')} style={styles.navLink}>
               <Text style={[styles.navLinkTxt, styles.navLinkAccent]}>$CIRCLE</Text>
             </Pressable>
           </View>
+        </View>
 
+        <View style={styles.heroCopy}>
           <Text style={styles.brand}>CIRCLE</Text>
-          <Text style={styles.line}>Ask someone you trust.{'\n'}Meet someone you need.</Text>
+          <Text style={styles.line}>Ask someone you trust.</Text>
+          <Text style={styles.lineSecondary}>Meet someone you need.</Text>
         </View>
 
         <View style={styles.landingBottom}>
@@ -588,8 +597,7 @@ export default function CoinHomePage() {
             onPress={startEnter}
             style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
           >
-            <Text style={styles.ctaTxt}>Enter</Text>
-            <Text style={styles.ctaArrow}>→</Text>
+            <Text style={styles.ctaTxt}>Enter the circle</Text>
           </Pressable>
           <Pressable
             onPress={async () => {
@@ -761,93 +769,130 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.75,
     shadowRadius: 10,
   },
+  glow: {
+    position: 'absolute',
+    width: 520,
+    height: 520,
+    borderRadius: 260,
+    backgroundColor: 'rgba(34,211,238,0.07)',
+    zIndex: 0,
+  },
+  vignette: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'transparent',
+    // RN web: approximate vignette with layered edges via border-ish overlay
+    borderWidth: 0,
+    shadowColor: '#020617',
+    shadowOpacity: 1,
+    shadowRadius: 120,
+    zIndex: 1,
+  },
   core: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 1.5,
-    borderColor: 'rgba(165,243,252,0.55)',
+    width: 148,
+    height: 148,
+    borderRadius: 74,
+    borderWidth: 1,
+    borderColor: 'rgba(165,243,252,0.4)',
     overflow: 'hidden',
     shadowColor: '#22D3EE',
-    shadowOpacity: 0.65,
-    shadowRadius: 36,
+    shadowOpacity: 0.55,
+    shadowRadius: 48,
     zIndex: 1,
   },
   coreImg: { width: '100%', height: '100%' },
   landingUi: {
     ...StyleSheet.absoluteFill,
     justifyContent: 'space-between',
-    paddingTop: 40,
-    paddingBottom: 52,
-    paddingHorizontal: 28,
+    paddingTop: 28,
+    paddingBottom: 48,
+    paddingHorizontal: 36,
     zIndex: 3,
   },
-  landingTop: { alignItems: 'center', paddingTop: 4 },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    maxWidth: 1080,
+    alignSelf: 'center',
+  },
+  topBrand: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  topMark: { width: 28, height: 28, borderRadius: 14 },
+  topWord: {
+    color: '#F8FAFC',
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 3.2,
+  },
   landingNav: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    marginBottom: 28,
+    gap: 22,
   },
-  navLink: { paddingVertical: 6, paddingHorizontal: 4 },
+  navLink: { paddingVertical: 8 },
   navLinkTxt: {
-    color: 'rgba(226,232,240,0.55)',
+    color: 'rgba(226,232,240,0.62)',
     fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: 0.4,
+    fontWeight: '500',
+    letterSpacing: 0.3,
   },
   navLinkAccent: { color: '#67E8F9', fontWeight: '700' },
-  navDot: { color: 'rgba(148,163,184,0.35)', fontSize: 14 },
-  landingBottom: { alignItems: 'center', gap: 16 },
+  heroCopy: {
+    alignItems: 'center',
+    marginTop: -40,
+  },
+  landingBottom: { alignItems: 'center', gap: 18 },
   demoBtn: { paddingVertical: 6, paddingHorizontal: 12 },
   demoTxt: {
-    color: 'rgba(148,163,184,0.9)',
+    color: 'rgba(203,213,225,0.72)',
     fontSize: 14,
-    fontWeight: '600',
-    letterSpacing: 0.2,
+    fontWeight: '500',
+    letterSpacing: 0.15,
   },
   brand: {
     color: '#F8FAFC',
-    fontSize: 72,
-    fontWeight: '800',
-    letterSpacing: 14,
-    marginBottom: 18,
+    fontSize: 64,
+    fontWeight: '200',
+    letterSpacing: 18,
+    marginBottom: 20,
     textAlign: 'center',
-    textShadowColor: 'rgba(34,211,238,0.35)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 32,
   },
   line: {
-    color: 'rgba(226,232,240,0.78)',
-    fontSize: 18,
+    color: 'rgba(248,250,252,0.92)',
+    fontSize: 20,
     textAlign: 'center',
-    maxWidth: 360,
-    lineHeight: 28,
+    lineHeight: 30,
+    fontWeight: '500',
     letterSpacing: 0.2,
+  },
+  lineSecondary: {
+    color: 'rgba(148,163,184,0.95)',
+    fontSize: 20,
+    textAlign: 'center',
+    lineHeight: 30,
     fontWeight: '400',
+    letterSpacing: 0.2,
+    marginTop: 2,
   },
   cta: {
-    backgroundColor: '#F8FAFC',
-    paddingHorizontal: 44,
-    paddingVertical: 16,
+    backgroundColor: 'rgba(248,250,252,0.96)',
+    paddingHorizontal: 36,
+    paddingVertical: 15,
     borderRadius: 999,
     shadowColor: '#22D3EE',
-    shadowOpacity: 0.45,
-    shadowRadius: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
+    shadowOpacity: 0.28,
+    shadowRadius: 28,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.65)',
   },
   ctaFull: { alignSelf: 'stretch', marginTop: 8 },
   ctaDisabled: { opacity: 0.35 },
-  ctaPressed: { transform: [{ scale: 0.98 }], opacity: 0.92 },
+  ctaPressed: { transform: [{ scale: 0.985 }], opacity: 0.92 },
   ctaTxt: {
     color: '#020617',
-    fontSize: 17,
-    fontWeight: '800',
-    letterSpacing: 0.2,
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 0.6,
   },
   ctaArrow: {
     color: '#020617',

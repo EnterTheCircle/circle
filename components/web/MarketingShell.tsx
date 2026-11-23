@@ -1,13 +1,12 @@
 import React from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Radii } from '@/constants/theme';
 import { CIRCLE_MARK } from '@/lib/brand';
 
-const LINKS: { href: string; label: string }[] = [
+const LINKS: { href: string; label: string; accent?: boolean }[] = [
   { href: '/about', label: 'About' },
   { href: '/tokenomics', label: 'Tokenomics' },
-  { href: '/circle-token', label: '$CIRCLE' },
+  { href: '/circle-token', label: '$CIRCLE', accent: true },
 ];
 
 export function MarketingShell({
@@ -30,14 +29,8 @@ export function MarketingShell({
         </Pressable>
         <View style={styles.nav}>
           {LINKS.map((l) => (
-            <Pressable
-              key={l.href}
-              onPress={() => router.push(l.href as any)}
-              style={[styles.navPill, l.label === '$CIRCLE' && styles.navPillAccent]}
-            >
-              <Text style={[styles.navTxt, l.label === '$CIRCLE' && styles.navTxtAccent]}>
-                {l.label}
-              </Text>
+            <Pressable key={l.href} onPress={() => router.push(l.href as any)} style={styles.navLink}>
+              <Text style={[styles.navTxt, l.accent && styles.navTxtAccent]}>{l.label}</Text>
             </Pressable>
           ))}
           <Pressable style={styles.enterMini} onPress={() => router.push('/signup')}>
@@ -53,9 +46,10 @@ export function MarketingShell({
       >
         <Text style={styles.kicker}>{kicker}</Text>
         <Text style={styles.title}>{title}</Text>
+        <View style={styles.rule} />
         {children}
         <Pressable style={styles.back} onPress={() => router.push('/signup')}>
-          <Text style={styles.backTxt}>← Back to home</Text>
+          <Text style={styles.backTxt}>← Home</Text>
         </Pressable>
       </ScrollView>
     </View>
@@ -72,7 +66,7 @@ export function MarketCard({
   accent?: string;
 }) {
   return (
-    <View style={[styles.card, accent ? { borderColor: accent + '44' } : null]}>
+    <View style={styles.section}>
       <Text style={[styles.cardTitle, accent ? { color: accent } : null]}>{title}</Text>
       <Text style={styles.cardBody}>{body}</Text>
     </View>
@@ -85,90 +79,85 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 28,
-    paddingVertical: 18,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(148,163,184,0.1)',
+    paddingHorizontal: 36,
+    paddingVertical: 22,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(148,163,184,0.14)',
   },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  mark: { width: 26, height: 26, borderRadius: 13 },
+  mark: { width: 28, height: 28, borderRadius: 14 },
   word: {
     color: '#F8FAFC',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '800',
-    letterSpacing: 3,
+    letterSpacing: 3.2,
   },
-  nav: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-  navPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(226,232,240,0.14)',
-    backgroundColor: 'rgba(248,250,252,0.04)',
-  },
-  navPillAccent: {
-    borderColor: 'rgba(34,211,238,0.35)',
-    backgroundColor: 'rgba(34,211,238,0.08)',
-  },
+  nav: { flexDirection: 'row', alignItems: 'center', gap: 22, flexWrap: 'wrap' },
+  navLink: { paddingVertical: 6 },
   navTxt: {
-    color: 'rgba(226,232,240,0.72)',
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.6,
+    color: 'rgba(226,232,240,0.62)',
+    fontSize: 13,
+    fontWeight: '500',
+    letterSpacing: 0.3,
   },
-  navTxtAccent: { color: '#67E8F9' },
+  navTxtAccent: { color: '#67E8F9', fontWeight: '700' },
   enterMini: {
-    marginLeft: 4,
-    backgroundColor: 'rgba(248,250,252,0.92)',
-    paddingHorizontal: 14,
+    marginLeft: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(248,250,252,0.85)',
+    backgroundColor: 'rgba(248,250,252,0.96)',
+    paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 999,
   },
-  enterMiniTxt: { color: '#020617', fontWeight: '800', fontSize: 12 },
+  enterMiniTxt: { color: '#020617', fontWeight: '700', fontSize: 12, letterSpacing: 0.4 },
   body: {
     paddingHorizontal: 36,
-    paddingTop: 40,
-    paddingBottom: 64,
-    maxWidth: 820,
+    paddingTop: 56,
+    paddingBottom: 72,
+    maxWidth: 720,
     width: '100%',
     alignSelf: 'center',
   },
   kicker: {
-    color: '#22D3EE',
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 1.3,
+    color: 'rgba(103,232,249,0.85)',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 2.4,
     textTransform: 'uppercase',
-    marginBottom: 12,
+    marginBottom: 14,
   },
   title: {
     color: '#F8FAFC',
-    fontSize: 40,
-    fontWeight: '800',
-    letterSpacing: -0.8,
+    fontSize: 44,
+    fontWeight: '200',
+    letterSpacing: 1,
+    marginBottom: 18,
+  },
+  rule: {
+    width: 40,
+    height: 1,
+    backgroundColor: 'rgba(34,211,238,0.45)',
     marginBottom: 28,
   },
-  card: {
-    backgroundColor: 'rgba(15,23,42,0.72)',
-    borderWidth: 1,
-    borderColor: 'rgba(148,163,184,0.14)',
-    borderRadius: Radii.lg,
-    padding: 20,
-    marginBottom: 14,
+  section: {
+    paddingVertical: 22,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(148,163,184,0.14)',
   },
   cardTitle: {
     color: '#E2E8F0',
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 0.2,
     marginBottom: 8,
   },
-  cardBody: { color: '#94A3B8', fontSize: 15, lineHeight: 23 },
+  cardBody: { color: 'rgba(148,163,184,0.95)', fontSize: 15, lineHeight: 24 },
   back: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginTop: 28,
+    marginTop: 36,
   },
-  backTxt: { color: '#94A3B8', fontWeight: '600', fontSize: 14 },
+  backTxt: { color: 'rgba(148,163,184,0.85)', fontWeight: '500', fontSize: 14 },
 });
