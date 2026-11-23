@@ -87,7 +87,7 @@ export default function CircleWeb() {
   const people = useMemo(() => {
     const max = filterToMaxDegree(filter);
     const first = activeCircle();
-    const through = demoMode ? [] : FOUNDER_CONTACTS;
+    const through = demoMode ? PEOPLE.filter((p) => p.degree === 2) : FOUNDER_CONTACTS;
     return [...first, ...through].map(enrichPerson)
       .filter((p) => p.degree <= max)
       .sort((a, b) => a.degree - b.degree || a.name.localeCompare(b.name));
@@ -314,11 +314,14 @@ export default function CircleWeb() {
                     </Pressable>
                   );
                 })}
-                {people.some((p) => isConfidential(p)) ? (
-                  <Text style={[styles.sectionLabel, { marginTop: 12 }]}>Through the Founder</Text>
+                {people.some((p) => p.degree === 2) ? (
+                  <Text style={[styles.sectionLabel, { marginTop: 12 }]}>
+                    {demoMode ? 'Through your circle' : 'Through the Founder'}
+                  </Text>
                 ) : null}
-                {people.filter(isConfidential).map((p) => {
+                {people.filter((p) => p.degree === 2).map((p) => {
                   const active = focusId === p.id;
+                  const hidden = isConfidential(p);
                   return (
                     <Pressable
                       key={p.id}
@@ -328,13 +331,18 @@ export default function CircleWeb() {
                         setPreview(p);
                       }}
                     >
-                      <Avatar initials="•" color={p.color} size={40} />
+                      <Avatar
+                        initials={hidden ? '•' : p.initials}
+                        photo={hidden ? undefined : p.photo}
+                        color={p.color}
+                        size={40}
+                      />
                       <View style={{ flex: 1, minWidth: 0 }}>
                         <Text style={styles.rowName} numberOfLines={1}>
-                          {p.profession}
+                          {hidden ? p.profession : p.name}
                         </Text>
                         <Text style={styles.rowMeta} numberOfLines={1}>
-                          Confidential
+                          {hidden ? 'Confidential · via Founder' : `${p.profession} · via ${p.via || 'mutual'}`}
                         </Text>
                       </View>
                     </Pressable>

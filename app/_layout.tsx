@@ -123,7 +123,13 @@ function RootNavigator() {
   if (showSidebar) {
     const stepId = tourMode === 'tour' ? TOUR_STEPS[tourStep]?.id : undefined;
     const target =
-      stepId === 'ask' ? 'discover' : stepId === 'introductions' ? 'introductions' : stepId;
+      stepId === 'ask' || stepId === 'discover'
+        ? 'discover'
+        : stepId === 'rings' || stepId === 'circle'
+          ? 'circle'
+          : stepId === 'introductions'
+            ? 'introductions'
+            : stepId;
     return (
       <View style={{ flex: 1, flexDirection: 'row', backgroundColor: Colors.bg }}>
         <WebSidebar tourTarget={target} />

@@ -6,6 +6,7 @@ import { useApp } from '@/context/AppContext';
 
 const TOPS: Record<string, number> = {
   circle: 188,
+  rings: 210,
   discover: 248,
   ask: 248,
   introductions: 328,
