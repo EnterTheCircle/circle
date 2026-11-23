@@ -77,6 +77,7 @@ export default function CoinHomePage() {
   const [username, setUsername] = useState('');
   const [channel, setChannel] = useState<CircleChannel>('whatsapp');
   const [credential, setCredential] = useState('');
+  const [city, setCity] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [resetToken, setResetToken] = useState('');
@@ -191,7 +192,11 @@ export default function CoinHomePage() {
       contactChannel,
       contactHandle: handle,
     };
-    updateProfile({ name: displayName, photo: defaultAvatar(displayName) });
+    updateProfile({
+      name: displayName,
+      photo: defaultAvatar(displayName),
+      location: city.trim(),
+    });
     await AsyncStorage.removeItem('circle.guide.v2');
     await enterFromLanding(account);
     if (username?.toLowerCase() === 'founder') recognizeFounder();
@@ -226,6 +231,10 @@ export default function CoinHomePage() {
         return;
       }
       if (authMode === 'signup') {
+        if (city.trim().length < 2) {
+          setAuthError('Enter your city.');
+          return;
+        }
         const res = await signUp({
           firstName,
           lastName,
@@ -405,6 +414,14 @@ export default function CoinHomePage() {
                   style={[styles.input, styles.nameInput]}
                 />
               </View>
+              <TextInput
+                value={city}
+                onChangeText={setCity}
+                placeholder="City, like New York"
+                placeholderTextColor="#64748B"
+                autoCapitalize="words"
+                style={styles.input}
+              />
               <TextInput
                 value={username}
                 onChangeText={setUsername}

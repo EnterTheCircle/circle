@@ -65,7 +65,7 @@ export default function ProfileWeb() {
           </View>
           <Text style={styles.quote}>“Your circle is your world.”</Text>
           <Text style={styles.meta}>
-            {profile.location} · {profile.profession}
+            {profile.location ? `${profile.profession} in ${profile.location}` : profile.profession}
           </Text>
           {account.contactHandle ? (
             <Text style={styles.meta}>

@@ -717,6 +717,7 @@ export function NetworkGlobe({
                   borderWidth: isEmpty ? 1.5 : hot ? 2.6 : n.ring === 1 ? 2 : 1.2,
                   // dashed can be flaky on some native builds — keep solid on phone
                   ...(Platform.OS === 'web' && isEmpty ? { borderStyle: 'dashed' as const } : null),
+                  backgroundColor: confidential || isGhostToSecond(n.person) ? '#2A2A38' : '#0B1020',
                   shadowColor: hot ? '#22D3EE' : n.person.color,
                   shadowOpacity: isEmpty ? 0 : hot ? 0.8 : n.front ? 0.35 : 0.08,
                   shadowRadius: hot ? 14 : 8,
@@ -734,8 +735,8 @@ export function NetworkGlobe({
                 >
                   +
                 </Text>
-              ) : isGhostToSecond(n.person) ? (
-                <Text style={{ color: '#94A3B8', fontSize: Math.max(10, n.size * 0.32), fontWeight: '700' }}>
+              ) : isGhostToSecond(n.person) || n.person.confidential ? (
+                <Text style={{ color: '#94A3B8', fontSize: Math.max(12, n.size * 0.38), fontWeight: '700' }}>
                   ?
                 </Text>
               ) : (

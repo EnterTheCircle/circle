@@ -133,7 +133,7 @@ export default function DiscoverWeb() {
               >
                 {ghost || person.confidential ? (
                   <View style={styles.ghostPhoto}>
-                    <Text style={styles.ghostMark}>{person.confidential ? '•' : '?'}</Text>
+                    <Text style={styles.ghostMark}>?</Text>
                   </View>
                 ) : (
                   <Image source={avatarSource(person.photo)} style={styles.photo} />
@@ -195,7 +195,7 @@ function PersonPane({
       <View style={styles.paneHead}>
         {ghost || isConfidential(person) ? (
           <View style={[styles.panePhoto, styles.ghostPhotoLarge]}>
-            <Text style={styles.ghostMarkLarge}>{isConfidential(person) ? '•' : '?'}</Text>
+            <Text style={styles.ghostMarkLarge}>?</Text>
           </View>
         ) : (
           <Image source={avatarSource(person.photo)} style={styles.panePhoto} />

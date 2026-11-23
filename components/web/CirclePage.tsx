@@ -135,7 +135,13 @@ export default function CircleWeb() {
               <Text style={styles.tipBody}>
                 Direct is people in your circle. In reach is everyone you can meet through them. The center is you. Inner ring is yours, the next ring is second circle.
               </Text>
-              <Pressable onPress={() => { setHelpOpen(false); startTour(); }}>
+              <Pressable
+                onPress={() => {
+                  setHelpOpen(false);
+                  startTour();
+                }}
+                style={styles.tipBtn}
+              >
                 <Text style={styles.tipLink}>Walk through the app</Text>
               </Pressable>
             </View>
@@ -233,9 +239,15 @@ export default function CircleWeb() {
               ) : (
                 <>
                   <Avatar
-                    initials={preview.initials}
-                    photo={preview.id === 'me' ? mePerson.photo : preview.photo}
-                    color={preview.color}
+                    initials={isConfidential(preview) ? '?' : preview.initials}
+                    photo={
+                      isConfidential(preview)
+                        ? undefined
+                        : preview.id === 'me'
+                          ? mePerson.photo
+                          : preview.photo
+                    }
+                    color={isConfidential(preview) ? '#64748B' : preview.color}
                     size={72}
                   />
                   <View style={styles.nameRow}>
@@ -327,9 +339,9 @@ export default function CircleWeb() {
                       }}
                     >
                       <Avatar
-                        initials={hidden ? '•' : p.initials}
+                        initials={hidden ? '?' : p.initials}
                         photo={hidden ? undefined : p.photo}
-                        color={p.color}
+                        color={hidden ? '#64748B' : p.color}
                         size={40}
                       />
                       <View style={{ flex: 1, minWidth: 0 }}>
@@ -361,9 +373,9 @@ export default function CircleWeb() {
                       }}
                     >
                       <Avatar
-                        initials={hidden ? '•' : p.initials}
+                        initials={hidden ? '?' : p.initials}
                         photo={hidden ? undefined : p.photo}
-                        color={p.color}
+                        color={hidden ? '#64748B' : p.color}
                         size={40}
                       />
                       <View style={{ flex: 1, minWidth: 0 }}>
@@ -451,10 +463,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(167,139,250,0.35)',
     padding: 14,
+    zIndex: 80,
   },
+  tipBtn: { marginTop: 12, alignSelf: 'flex-start' },
   tipTitle: { color: '#fff', fontWeight: '800', fontSize: 13, marginBottom: 6 },
   tipBody: { color: Colors.textSecondary, fontSize: 13, lineHeight: 19 },
-  tipLink: { color: '#67E8F9', fontWeight: '700', fontSize: 13, marginTop: 10 },
+  tipLink: { color: '#67E8F9', fontWeight: '700', fontSize: 13 },
   bell: {
     width: 56,
     height: 56,

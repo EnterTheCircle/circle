@@ -26,7 +26,7 @@ export function TourHost() {
     router.push(step.route as '/');
   }, [tourMode, tourStep, step.route, router]);
 
-  if (badgeCelebrate) {
+  if (badgeCelebrate && tourMode !== 'tour') {
     const name = profile.name?.trim().split(/\s+/)[0] || 'You';
     return <First10kAward name={name} onDone={dismissBadge} />;
   }

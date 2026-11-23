@@ -11,7 +11,6 @@ import {
   TextStyle,
   StyleProp,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Radii, Spacing, Typography } from '@/constants/theme';
 import { avatarSource } from '@/lib/avatars';
 
@@ -209,14 +208,10 @@ export function Badge({ label, tone = 'accent' }: { label: string; tone?: 'accen
 
 export function Toast({ message }: { message: string }) {
   return (
-    <View style={styles.toast}>
-      <LinearGradient
-        colors={['rgba(139,92,246,0.35)', 'rgba(18,18,26,0.95)']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-      <Text style={styles.toastText}>{message}</Text>
+    <View style={styles.toastWrap} pointerEvents="none">
+      <View style={styles.toast}>
+        <Text style={styles.toastText}>{message}</Text>
+      </View>
     </View>
   );
 }
@@ -352,18 +347,21 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.5,
   },
-  toast: {
+  toastWrap: {
     position: 'absolute',
-    bottom: 110,
-    left: 24,
-    right: 24,
-    borderRadius: Radii.md,
-    borderWidth: 1,
-    borderColor: Colors.borderStrong,
-    overflow: 'hidden',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    bottom: 28,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
     zIndex: 100,
+  },
+  toast: {
+    backgroundColor: '#161622',
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(167,139,250,0.4)',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
   },
   toastText: {
     color: Colors.text,

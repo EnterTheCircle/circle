@@ -575,6 +575,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
 
   const startTour = useCallback(() => {
+    setBadgeCelebrate(false);
     setTourStepState(0);
     setTourMode('tour');
   }, []);
