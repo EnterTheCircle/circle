@@ -45,6 +45,7 @@ export default function CircleWeb() {
   const [focusId, setFocusId] = useState('me');
   const [preview, setPreview] = useState<Person | null>(null);
   const [globeSize, setGlobeSize] = useState(720);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   const maxDegree = filterToMaxDegree(filter);
   const handleZoomChange = useCallback((next: number) => setZoom(next), []);
@@ -102,26 +103,46 @@ export default function CircleWeb() {
   return (
     <View style={styles.page}>
       <View style={styles.topBar}>
-        <View style={styles.statsRow}>
-          <View style={styles.statChip}>
-            <Text style={styles.statNum}>
-              {isAppFounder ? FOUNDER_CONTACTS.length : demoMode ? activeCircle().length : NETWORK_STATS.direct}
-            </Text>
-            <Text style={styles.statLbl}>direct</Text>
+        <View style={styles.statsWrap}>
+          <View style={styles.statsRow}>
+            <View style={styles.stat}>
+              <Text style={styles.statNum}>
+                {isAppFounder ? FOUNDER_CONTACTS.length : demoMode ? activeCircle().length : NETWORK_STATS.direct}
+              </Text>
+              <Text style={styles.statLbl}>Direct</Text>
+            </View>
+            <View style={styles.statRule} />
+            <View style={styles.stat}>
+              <Text style={styles.statNum}>
+                {isAppFounder
+                  ? 0
+                  : demoMode
+                    ? PEOPLE.filter((p) => p.degree >= 2).length
+                    : FOUNDER_CONTACTS.length}
+              </Text>
+              <Text style={styles.statLbl}>In reach</Text>
+            </View>
+            <Pressable
+              style={[styles.help, helpOpen && styles.helpOn]}
+              onPress={() => setHelpOpen((v) => !v)}
+            >
+              <Text style={styles.helpMark}>?</Text>
+            </Pressable>
           </View>
-          <View style={styles.statChip}>
-            <Text style={styles.statNum}>
-              {isAppFounder
-                ? 0
-                : demoMode
-                  ? PEOPLE.filter((p) => p.degree >= 2).length
-                  : FOUNDER_CONTACTS.length}
-            </Text>
-            <Text style={styles.statLbl}>in reach</Text>
-          </View>
+          {helpOpen ? (
+            <View style={styles.tip}>
+              <Text style={styles.tipTitle}>How to read this</Text>
+              <Text style={styles.tipBody}>
+                Direct is people in your circle. In reach is everyone you can meet through them. The center is you. Inner ring is yours, the next ring is second circle.
+              </Text>
+              <Pressable onPress={() => { setHelpOpen(false); startTour(); }}>
+                <Text style={styles.tipLink}>Walk through the app</Text>
+              </Pressable>
+            </View>
+          ) : null}
         </View>
         <Pressable style={styles.bell} onPress={() => router.push('/notifications')}>
-          <Glyph name="bell" size={18} color={Colors.text} />
+          <Glyph name="bell" size={26} color={Colors.text} />
           {unreadCount > 0 ? (
             <View style={styles.dot}>
               <Text style={styles.dotText}>{unreadCount}</Text>
@@ -184,12 +205,6 @@ export default function CircleWeb() {
               <Pressable style={styles.toolBtn} onPress={resetView}>
                 <Glyph name="locate" size={14} color={Colors.cyan} />
                 <Text style={[styles.toolTxt, { color: Colors.cyan }]}>Reset</Text>
-              </Pressable>
-              <Pressable
-                style={styles.toolBtn}
-                onPress={startTour}
-              >
-                <Text style={styles.toolTxt}>Tour</Text>
               </Pressable>
             </View>
           </View>
@@ -391,42 +406,78 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
-  statsRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  statChip: {
-    backgroundColor: Colors.bgCard,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radii.md,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+  statsWrap: { position: 'relative', zIndex: 5 },
+  statsRow: {
     flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 6,
-  },
-  statNum: { color: Colors.text, fontSize: 16, fontWeight: '800' },
-  statLbl: { color: Colors.textMuted, fontSize: 11 },
-  bell: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    alignItems: 'center',
+    gap: 16,
+    backgroundColor: 'rgba(12,12,22,0.92)',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: 'rgba(167,139,250,0.22)',
+    borderRadius: 18,
+    paddingLeft: 18,
+    paddingRight: 8,
+    paddingVertical: 8,
+  },
+  stat: { alignItems: 'flex-start', minWidth: 64 },
+  statRule: { width: 1, alignSelf: 'stretch', backgroundColor: 'rgba(255,255,255,0.08)' },
+  statNum: { color: '#fff', fontSize: 20, fontWeight: '800', letterSpacing: -0.4, lineHeight: 22 },
+  statLbl: {
+    color: Colors.textMuted,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+    marginTop: 2,
+  },
+  help: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(167,139,250,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 4,
+  },
+  helpOn: { backgroundColor: 'rgba(167,139,250,0.18)' },
+  helpMark: { color: '#C4B5FD', fontSize: 15, fontWeight: '800' },
+  tip: {
+    position: 'absolute',
+    top: 64,
+    left: 0,
+    width: 280,
+    backgroundColor: '#12121C',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(167,139,250,0.35)',
+    padding: 14,
+  },
+  tipTitle: { color: '#fff', fontWeight: '800', fontSize: 13, marginBottom: 6 },
+  tipBody: { color: Colors.textSecondary, fontSize: 13, lineHeight: 19 },
+  tipLink: { color: '#67E8F9', fontWeight: '700', fontSize: 13, marginTop: 10 },
+  bell: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: 'rgba(167,139,250,0.35)',
+    backgroundColor: 'rgba(12,12,22,0.92)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   dot: {
     position: 'absolute',
-    top: -2,
-    right: -2,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
+    top: 2,
+    right: 2,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
     backgroundColor: Colors.accentStrong,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 3,
+    paddingHorizontal: 4,
   },
-  dotText: { color: '#fff', fontSize: 9, fontWeight: '700' },
+  dotText: { color: '#fff', fontSize: 10, fontWeight: '800' },
   body: { flex: 1, flexDirection: 'row', gap: 16, minHeight: 0 },
   globeCol: {
     flex: 1,
