@@ -165,6 +165,13 @@ export async function signUp(input: {
   if (credentialError) return { ok: false, error: credentialError };
 
   if (apiEnabled) {
+    let visitorId = '';
+    try {
+      const { getVisitorId } = await import('./analytics');
+      visitorId = await getVisitorId();
+    } catch {
+      visitorId = '';
+    }
     const res = await api.signup({
       firstName,
       lastName,
@@ -173,6 +180,7 @@ export async function signUp(input: {
       channel,
       credential,
       location: location || 'Unknown',
+      visitorId,
     });
     if (!res.ok) return { ok: false, error: res.error };
     const session = sessionFromApiUser(res.user, res.token);

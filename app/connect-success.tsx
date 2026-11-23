@@ -19,8 +19,11 @@ export default function ConnectSuccess() {
 
   useEffect(() => {
     addConnection(String(name));
+    void import('@/lib/analytics').then((m) =>
+      m.trackConnect({ name: String(name), method: String(method) })
+    );
     Animated.spring(scale, { toValue: 1, friction: 5, useNativeDriver: true }).start();
-  }, [addConnection, name, scale]);
+  }, [addConnection, name, method, scale]);
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top + 40, paddingBottom: insets.bottom + 24 }]}>

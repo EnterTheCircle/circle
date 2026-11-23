@@ -74,4 +74,33 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ token, password }),
     }),
+  track: (
+    body: { type: string; path?: string; visitorId?: string; meta?: Record<string, unknown> },
+    token?: string
+  ) =>
+    request('/analytics/track', {
+      method: 'POST',
+      token,
+      body: JSON.stringify(body),
+    }),
+  founderStats: (token: string) =>
+    request<{
+      totals: {
+        visits: number;
+        uniqueVisitors: number;
+        signups: number;
+        connects: number;
+        connectAsks: number;
+      };
+      today: { visits: number; signups: number; connects: number };
+      last14Days: { day: string; visits: number; signups: number; connects: number }[];
+      topPaths: { path: string; n: number }[];
+      recentSignups: { name: string; username: string; location: string; createdAt: string }[];
+      recentConnects: {
+        createdAt: string;
+        path: string;
+        meta: Record<string, unknown>;
+        visitorId: string;
+      }[];
+    }>('/founder/stats', { token }),
 };

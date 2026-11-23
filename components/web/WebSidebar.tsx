@@ -50,7 +50,7 @@ const NAV: {
 export function WebSidebar({ tourTarget }: { tourTarget?: 'circle' | 'discover' | 'add' | 'introductions' | 'profile' }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { pendingIntroCount, profile, unreadCount, signOut, demoMode } = useApp();
+  const { pendingIntroCount, profile, unreadCount, signOut, demoMode, isAppFounder } = useApp();
 
   const initials = initialsFromName(profile.name);
 
@@ -119,6 +119,30 @@ export function WebSidebar({ tourTarget }: { tourTarget?: 'circle' | 'discover' 
             </Pressable>
           );
         })}
+        {isAppFounder ? (
+          <Pressable
+            onPress={() => router.push('/stats')}
+            style={({ pressed }) => [
+              styles.item,
+              pressed && styles.itemHover,
+              pathname.includes('stats') && styles.itemActive,
+            ]}
+          >
+            <View style={[styles.iconWrap, pathname.includes('stats') && styles.iconWrapActive]}>
+              <Glyph
+                name="chart"
+                size={17}
+                color={pathname.includes('stats') ? '#C4B5FD' : Colors.textMuted}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.itemLabel, pathname.includes('stats') && styles.itemLabelActive]}>
+                Stats
+              </Text>
+              <Text style={styles.itemHint}>Visits & growth</Text>
+            </View>
+          </Pressable>
+        ) : null}
       </View>
 
       <View style={{ flex: 1 }} />

@@ -18,7 +18,8 @@ export type GlyphName =
   | 'close'
   | 'camera'
   | 'edit'
-  | 'shield';
+  | 'shield'
+  | 'chart';
 
 /** Drawn icons — no icon font, so they never render as empty squares. */
 export function Glyph({
@@ -146,6 +147,15 @@ export function Glyph({
       return (
         <Svg {...props}>
           <Path d="M12 3.5 19 6.5v5.2c0 4.2-2.8 7.2-7 8.8-4.2-1.6-7-4.6-7-8.8V6.5L12 3.5Z" {...stroke} />
+        </Svg>
+      );
+    case 'chart':
+      return (
+        <Svg {...props}>
+          <Path d="M4 19h16" {...stroke} />
+          <Path d="M7 16V11" {...stroke} />
+          <Path d="M12 16V7" {...stroke} />
+          <Path d="M17 16v-4" {...stroke} />
         </Svg>
       );
     default:

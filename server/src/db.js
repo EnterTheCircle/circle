@@ -85,8 +85,21 @@ export async function migrate() {
       expires_at TIMESTAMPTZ NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS analytics_events (
+      id TEXT PRIMARY KEY,
+      type TEXT NOT NULL,
+      path TEXT NOT NULL DEFAULT '',
+      visitor_id TEXT NOT NULL DEFAULT '',
+      user_id TEXT,
+      meta JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
     CREATE INDEX IF NOT EXISTS sessions_user_idx ON sessions(user_id);
     CREATE INDEX IF NOT EXISTS notifications_user_idx ON notifications(user_id);
     CREATE INDEX IF NOT EXISTS intros_user_idx ON intro_requests(user_id);
+    CREATE INDEX IF NOT EXISTS analytics_type_idx ON analytics_events(type);
+    CREATE INDEX IF NOT EXISTS analytics_created_idx ON analytics_events(created_at DESC);
+    CREATE INDEX IF NOT EXISTS analytics_visitor_idx ON analytics_events(visitor_id);
   `);
 }

@@ -553,6 +553,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         ...prev,
       ]);
       showToast('Request sent. They confirm with your word.');
+      void import('@/lib/analytics').then((m) =>
+        m.trackConnectAsk({ kind, toWord: target, fromWord: mine.word })
+      );
       return { ok: true as const, fromWord: mine.word };
     },
     [profile.name, showToast]
@@ -569,6 +572,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setConnectAsks(next);
       void AsyncStorage.setItem(ASKS_KEY, JSON.stringify(next));
       showToast(`Connected with ${ask.fromName}`);
+      void import('@/lib/analytics').then((m) =>
+        m.trackConnect({ name: ask.fromName, kind: ask.kind })
+      );
       return true;
     },
     [connectAsks, showToast]

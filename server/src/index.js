@@ -25,6 +25,150 @@ app.get('/health', (_req, res) => {
   res.json({ ok: true, service: 'circle-api' });
 });
 
+async function requireFounder(req, res) {
+  const user = await userFromAuth(req);
+  if (!user) {
+    res.status(401).json({ ok: false, error: 'Unauthorized' });
+    return null;
+  }
+  if (String(user.username || '').toLowerCase() !== 'founder') {
+    res.status(403).json({ ok: false, error: 'Founder only.' });
+    return null;
+  }
+  return user;
+}
+
+async function recordEvent({ type, path = '', visitorId = '', userId = null, meta = {} }) {
+  const id = newId('ev');
+  await query(
+    `INSERT INTO analytics_events (id, type, path, visitor_id, user_id, meta)
+     VALUES ($1,$2,$3,$4,$5,$6)`,
+    [id, type, path.slice(0, 200), String(visitorId || '').slice(0, 80), userId, JSON.stringify(meta)]
+  );
+  return id;
+}
+
+/** Public: page visits + client-reported connects (no secrets). */
+app.post('/analytics/track', async (req, res) => {
+  try {
+    const type = String(req.body.type || '').trim();
+    const allowed = new Set(['visit', 'connect', 'connect_ask']);
+    if (!allowed.has(type)) {
+      return res.status(400).json({ ok: false, error: 'Unknown event type.' });
+    }
+    const path = String(req.body.path || '/');
+    const visitorId = String(req.body.visitorId || '');
+    const meta = typeof req.body.meta === 'object' && req.body.meta ? req.body.meta : {};
+    const user = await userFromAuth(req);
+    await recordEvent({
+      type,
+      path,
+      visitorId,
+      userId: user?.id || null,
+      meta,
+    });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'Track failed.' });
+  }
+});
+
+/** Founder-only funnel stats. */
+app.get('/founder/stats', async (req, res) => {
+  try {
+    const founder = await requireFounder(req, res);
+    if (!founder) return;
+
+    const [visits, uniques, signups, connects, asks, byDay, topPaths, recentUsers, recentConnects] =
+      await Promise.all([
+        query(`SELECT COUNT(*)::int AS n FROM analytics_events WHERE type = 'visit'`),
+        query(
+          `SELECT COUNT(DISTINCT visitor_id)::int AS n FROM analytics_events WHERE type = 'visit' AND visitor_id <> ''`
+        ),
+        query(`SELECT COUNT(*)::int AS n FROM users WHERE LOWER(username) <> 'founder'`),
+        query(`SELECT COUNT(*)::int AS n FROM analytics_events WHERE type = 'connect'`),
+        query(`SELECT COUNT(*)::int AS n FROM analytics_events WHERE type = 'connect_ask'`),
+        query(
+          `SELECT to_char(day, 'YYYY-MM-DD') AS day,
+                  COALESCE(SUM(CASE WHEN type = 'visit' THEN 1 ELSE 0 END), 0)::int AS visits,
+                  COALESCE(SUM(CASE WHEN type = 'signup' THEN 1 ELSE 0 END), 0)::int AS signups,
+                  COALESCE(SUM(CASE WHEN type = 'connect' THEN 1 ELSE 0 END), 0)::int AS connects
+           FROM (
+             SELECT date_trunc('day', created_at) AS day, type
+             FROM analytics_events
+             WHERE created_at > NOW() - INTERVAL '14 days'
+             UNION ALL
+             SELECT date_trunc('day', created_at), 'signup'
+             FROM users
+             WHERE LOWER(username) <> 'founder' AND created_at > NOW() - INTERVAL '14 days'
+           ) t
+           GROUP BY day
+           ORDER BY day ASC`
+        ),
+        query(
+          `SELECT path, COUNT(*)::int AS n
+           FROM analytics_events
+           WHERE type = 'visit' AND path <> ''
+           GROUP BY path
+           ORDER BY n DESC
+           LIMIT 8`
+        ),
+        query(
+          `SELECT u.name, u.username, u.created_at, COALESCE(p.location, '') AS location
+           FROM users u
+           LEFT JOIN profiles p ON p.user_id = u.id
+           WHERE LOWER(u.username) <> 'founder'
+           ORDER BY u.created_at DESC
+           LIMIT 20`
+        ),
+        query(
+          `SELECT created_at, path, meta, visitor_id
+           FROM analytics_events
+           WHERE type = 'connect'
+           ORDER BY created_at DESC
+           LIMIT 20`
+        ),
+      ]);
+
+    const today = await query(
+      `SELECT
+         (SELECT COUNT(*)::int FROM analytics_events WHERE type = 'visit' AND created_at::date = CURRENT_DATE) AS visits,
+         (SELECT COUNT(*)::int FROM users WHERE LOWER(username) <> 'founder' AND created_at::date = CURRENT_DATE) AS signups,
+         (SELECT COUNT(*)::int FROM analytics_events WHERE type = 'connect' AND created_at::date = CURRENT_DATE) AS connects`
+    );
+
+    res.json({
+      ok: true,
+      totals: {
+        visits: visits.rows[0].n,
+        uniqueVisitors: uniques.rows[0].n,
+        signups: signups.rows[0].n,
+        connects: connects.rows[0].n,
+        connectAsks: asks.rows[0].n,
+      },
+      today: today.rows[0],
+      last14Days: byDay.rows,
+      topPaths: topPaths.rows,
+      recentSignups: recentUsers.rows.map((r) => ({
+        name: r.name,
+        username: r.username,
+        location: r.location,
+        createdAt: r.created_at,
+      })),
+      recentConnects: recentConnects.rows.map((r) => ({
+        createdAt: r.created_at,
+        path: r.path,
+        meta: r.meta,
+        visitorId: r.visitor_id,
+      })),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'Stats failed.' });
+  }
+});
+
 app.post('/auth/signup', async (req, res) => {
   try {
     const firstName = String(req.body.firstName || '').trim();
@@ -99,6 +243,17 @@ app.post('/auth/signup', async (req, res) => {
       channel,
       credential,
     });
+    try {
+      await recordEvent({
+        type: 'signup',
+        path: '/signup',
+        visitorId: String(req.body.visitorId || ''),
+        userId: id,
+        meta: { username, location, channel },
+      });
+    } catch {
+      /* analytics must not block signup */
+    }
     res.json({ ok: true, token, user });
   } catch (err) {
     console.error(err);

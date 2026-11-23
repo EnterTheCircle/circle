@@ -106,9 +106,25 @@ function AppStack() {
           options={{ title: 'Notification Preferences' }}
         />
         <Stack.Screen name="privacy-settings" options={{ title: 'Privacy & Discovery' }} />
+        <Stack.Screen name="stats" options={{ headerShown: false }} />
       </Stack.Protected>
     </Stack>
   );
+}
+
+function VisitTracker() {
+  const { onboardingReady } = useApp();
+  useEffect(() => {
+    if (!onboardingReady) return;
+    let path = '/';
+    try {
+      if (typeof window !== 'undefined') path = window.location.pathname || '/';
+    } catch {
+      path = '/';
+    }
+    void import('@/lib/analytics').then((m) => m.trackPageVisit(path));
+  }, [onboardingReady]);
+  return null;
 }
 
 function RootNavigator() {
@@ -157,6 +173,7 @@ export default function RootLayout() {
         <View style={{ flex: 1, backgroundColor: Colors.bg }}>
           <StatusBar style="light" />
           <SplashController fontsReady={fontsReady || Platform.OS === 'web'} />
+          <VisitTracker />
           <RootNavigator />
           <ToastHost />
         </View>
