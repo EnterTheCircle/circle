@@ -29,18 +29,18 @@ export default function TokenomicsPage() {
       </View>
 
       <MarketCard
-        title="Treasury instruction"
-        body={`When a treasury agent is connected, it is told to use ${TREASURY_AGENT_INSTRUCTION.whenConnected.usePercentOfProceeds}% of proceeds to buy back $CIRCLE. No agent is connected in this build, so nothing here places a trade.`}
+        title="Buybacks"
+        body={`${TREASURY_AGENT_INSTRUCTION.usePercentOfProceeds}% of proceeds are used to buy back $CIRCLE. Purchases happen from treasury proceeds.`}
         accent="#A78BFA"
       />
       <MarketCard
         title="Fair framing"
-        body="Transparent supply narrative. No fake acquisition proceeds. Product usage is the proof — the token spreads the story."
+        body="Transparent supply. Product usage is the proof — the token spreads the story."
         accent="#67E8F9"
       />
       <MarketCard
-        title="Utility (soft)"
-        body="Culture badge, early access priority, and community identity. Not a promise of yield from intros."
+        title="Utility"
+        body="Culture badge, early access priority, and community identity around warm access."
       />
       <MarketCard
         title="Disclaimer"

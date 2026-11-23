@@ -29,7 +29,7 @@ export default function CircleTokenPage() {
       />
       <MarketCard
         title="Business link"
-        body="Traffic and culture fund awareness. Retention comes from intros that work. Treasury can support product — never a claim on acquisition cash."
+        body="Traffic and culture fund awareness. Retention comes from intros that work. 20% of proceeds buy back $CIRCLE — treasury supports the culture layer."
       />
 
       <View style={styles.links}>
@@ -46,10 +46,6 @@ export default function CircleTokenPage() {
           <Text style={styles.linkTxt}>Live app →</Text>
         </Pressable>
       </View>
-
-      <Text style={styles.note}>
-        CA / chart links can be added here when you publish the mint. Keep this page product-honest.
-      </Text>
     </MarketingShell>
   );
 }
@@ -86,10 +82,4 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(34,211,238,0.08)',
   },
   linkTxt: { color: '#67E8F9', fontWeight: '700', fontSize: 13 },
-  note: {
-    marginTop: 22,
-    color: '#64748B',
-    fontSize: 12,
-    lineHeight: 18,
-  },
 });
