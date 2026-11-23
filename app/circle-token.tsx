@@ -1,7 +1,7 @@
 import React from 'react';
 import { Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { MarketCard, MarketingShell } from '@/components/web/MarketingShell';
-import { CIRCLE_MARK } from '@/lib/brand';
+import { CIRCLE_LINKS, CIRCLE_MARK, CIRCLE_MINT } from '@/lib/brand';
 
 export default function CircleTokenPage() {
   return (
@@ -10,6 +10,13 @@ export default function CircleTokenPage() {
         <Image source={CIRCLE_MARK} style={styles.mark} />
         <Text style={styles.tokenName}>$CIRCLE</Text>
         <Text style={styles.tokenSub}>Same mark as the product. One Circle.</Text>
+      </View>
+
+      <View style={styles.caBox}>
+        <Text style={styles.caLabel}>CA</Text>
+        <Text style={styles.caValue} selectable>
+          {CIRCLE_MINT}
+        </Text>
       </View>
 
       <Text style={styles.lede}>
@@ -33,6 +40,15 @@ export default function CircleTokenPage() {
       />
 
       <View style={styles.links}>
+        <Pressable style={styles.linkBtn} onPress={() => Linking.openURL(CIRCLE_LINKS.pump)}>
+          <Text style={styles.linkTxt}>Pump.fun →</Text>
+        </Pressable>
+        <Pressable style={styles.linkBtn} onPress={() => Linking.openURL(CIRCLE_LINKS.dexscreener)}>
+          <Text style={styles.linkTxt}>Chart →</Text>
+        </Pressable>
+        <Pressable style={styles.linkBtn} onPress={() => Linking.openURL(CIRCLE_LINKS.solscan)}>
+          <Text style={styles.linkTxt}>Solscan →</Text>
+        </Pressable>
         <Pressable
           style={styles.linkBtn}
           onPress={() => Linking.openURL('https://github.com/EnterTheCircle/circle')}
@@ -51,7 +67,7 @@ export default function CircleTokenPage() {
 }
 
 const styles = StyleSheet.create({
-  heroMark: { alignItems: 'center', marginBottom: 28, gap: 10 },
+  heroMark: { alignItems: 'center', marginBottom: 20, gap: 10 },
   mark: {
     width: 112,
     height: 112,
@@ -66,6 +82,29 @@ const styles = StyleSheet.create({
     letterSpacing: 1.2,
   },
   tokenSub: { color: '#64748B', fontSize: 13 },
+  caBox: {
+    alignSelf: 'stretch',
+    backgroundColor: 'rgba(15,23,42,0.85)',
+    borderWidth: 1,
+    borderColor: 'rgba(34,211,238,0.28)',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 22,
+    gap: 6,
+  },
+  caLabel: {
+    color: '#67E8F9',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 2,
+  },
+  caValue: {
+    color: '#E2E8F0',
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 20,
+  },
   lede: {
     color: '#CBD5E1',
     fontSize: 17,
