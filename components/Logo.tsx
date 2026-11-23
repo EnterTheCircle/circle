@@ -31,12 +31,12 @@ const styles = StyleSheet.create({
     color: Colors.text,
     fontSize: 18,
     fontWeight: '800',
-    letterSpacing: 2.2,
+    letterSpacing: 3.6,
   },
   wordCompact: {
     color: Colors.text,
     fontSize: 15,
     fontWeight: '800',
-    letterSpacing: 2.4,
+    letterSpacing: 3.8,
   },
 });

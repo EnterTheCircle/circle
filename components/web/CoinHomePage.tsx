@@ -34,19 +34,19 @@ type Phase = 'landing' | 'story' | 'auth';
 type AuthMode = 'signin' | 'signup' | 'forgot' | 'reset';
 
 const NODES = [
-  { angle: 12, r: 0.34, size: 11 },
-  { angle: 48, r: 0.42, size: 14 },
-  { angle: 86, r: 0.36, size: 10 },
-  { angle: 128, r: 0.46, size: 15 },
-  { angle: 168, r: 0.33, size: 12 },
-  { angle: 210, r: 0.44, size: 13 },
-  { angle: 252, r: 0.37, size: 11 },
-  { angle: 294, r: 0.45, size: 14 },
-  { angle: 336, r: 0.35, size: 10 },
-  { angle: 70, r: 0.58, size: 8 },
-  { angle: 160, r: 0.56, size: 9 },
-  { angle: 250, r: 0.57, size: 8 },
-  { angle: 320, r: 0.55, size: 9 },
+  { angle: 12, r: 0.48, size: 11 },
+  { angle: 48, r: 0.56, size: 14 },
+  { angle: 86, r: 0.50, size: 10 },
+  { angle: 128, r: 0.58, size: 15 },
+  { angle: 168, r: 0.47, size: 12 },
+  { angle: 210, r: 0.55, size: 13 },
+  { angle: 252, r: 0.49, size: 11 },
+  { angle: 294, r: 0.57, size: 14 },
+  { angle: 336, r: 0.48, size: 10 },
+  { angle: 70, r: 0.72, size: 8 },
+  { angle: 160, r: 0.70, size: 9 },
+  { angle: 250, r: 0.71, size: 8 },
+  { angle: 320, r: 0.69, size: 9 },
 ];
 
 const STORY_STEPS = [
@@ -605,9 +605,7 @@ export default function CoinHomePage() {
           </View>
 
           <Text style={styles.brandEyebrow}>ENTER THE</Text>
-          <Text style={styles.brand}>
-            CIR<Text style={styles.brandAccent}>CLE</Text>
-          </Text>
+          <Text style={styles.brand}>CIRCLE</Text>
           <View style={styles.brandRule} />
         </View>
 
@@ -746,7 +744,17 @@ function Orbit({
       })}
 
       {showCore ? (
-        <Animated.View style={[styles.core, { transform: [{ scale: breathe }] }]}>
+        <Animated.View
+          style={[
+            styles.core,
+            {
+              width: Math.round(stage * 0.38),
+              height: Math.round(stage * 0.38),
+              borderRadius: Math.round(stage * 0.19),
+              transform: [{ scale: breathe }],
+            },
+          ]}
+        >
           <Image source={AVATAR} style={styles.coreImg} />
         </Animated.View>
       ) : null}
@@ -791,8 +799,8 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
   },
   ringInner: {
-    width: '42%',
-    height: '42%',
+    width: '52%',
+    height: '52%',
     borderColor: 'rgba(34,211,238,0.45)',
   },
   node: {
@@ -821,15 +829,12 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   core: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
     borderWidth: 2,
-    borderColor: 'rgba(248,250,252,0.9)',
+    borderColor: 'rgba(103,232,249,0.85)',
     overflow: 'hidden',
     shadowColor: '#22D3EE',
-    shadowOpacity: 0.5,
-    shadowRadius: 28,
+    shadowOpacity: 0.65,
+    shadowRadius: 36,
     zIndex: 1,
   },
   coreImg: { width: '100%', height: '100%' },
@@ -875,32 +880,24 @@ const styles = StyleSheet.create({
   demoTxt: { color: 'rgba(226,232,240,0.72)', fontSize: 14, fontWeight: '700' },
   brandEyebrow: {
     color: '#67E8F9',
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 4,
-    marginBottom: 10,
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 6,
+    marginBottom: 14,
     textAlign: 'center',
   },
   brand: {
     color: '#F8FAFC',
-    fontSize: 68,
-    fontWeight: '200',
-    letterSpacing: 16,
-    marginBottom: 14,
-    textAlign: 'center',
-    textShadowColor: 'rgba(34,211,238,0.45)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 28,
-  },
-  brandAccent: {
-    color: '#A5F3FC',
+    fontSize: 64,
     fontWeight: '800',
-    letterSpacing: 16,
+    letterSpacing: 10,
+    marginBottom: 16,
+    textAlign: 'center',
   },
   brandRule: {
-    width: 56,
+    width: 72,
     height: 2,
-    backgroundColor: 'rgba(34,211,238,0.55)',
+    backgroundColor: 'rgba(34,211,238,0.6)',
     borderRadius: 2,
   },
   cta: {
@@ -1011,9 +1008,9 @@ const styles = StyleSheet.create({
   authMark: { width: 48, height: 48, borderRadius: 24, marginBottom: 4 },
   authBrand: {
     color: '#F8FAFC',
-    fontWeight: '900',
-    letterSpacing: 4,
-    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 5,
+    fontSize: 15,
   },
   authTitle: {
     color: '#F8FAFC',
