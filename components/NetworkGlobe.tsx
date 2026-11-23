@@ -670,6 +670,7 @@ export function NetworkGlobe({
       {sorted.map((n) => {
         if (!n.visible || n.occlude < 0.1) return null;
         const isEmpty = !!n.emptySlot;
+        const confidential = !!n.person.confidential;
         const opacity = confidential
           ? 1
           : isEmpty
@@ -677,7 +678,6 @@ export function NetworkGlobe({
             : (n.anonymous ? 0.28 : 0.45) * n.depthOpacity * n.occlude * (n.dim ? 0.22 : 1) +
               (n.front && !n.anonymous && !n.dim ? 0.28 : 0);
         const hot = !isEmpty && highlightId === n.person.id;
-        const confidential = !!n.person.confidential;
         const showLabel =
           !isEmpty &&
           (confidential
