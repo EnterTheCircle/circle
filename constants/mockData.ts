@@ -479,59 +479,7 @@ export const CATEGORY_MAP: Record<string, string[]> = {
   Lifestyle: ['emily', 'olivia', 'alex-morgan'],
 };
 
-export const INITIAL_INTROS: IntroRequest[] = [
-  {
-    id: 'intro-1',
-    type: 'received',
-    fromName: 'James',
-    toName: 'Alex Morgan',
-    toId: 'alex-morgan',
-    reason:
-      'Both of you are Real Madrid supporters in NYC. Would love to watch a game together.',
-    mutual: 'You',
-    status: 'pending',
-  },
-  {
-    id: 'intro-2',
-    type: 'received',
-    fromName: 'Sarah',
-    toName: 'David Patel',
-    toId: 'david',
-    reason: 'Looking for a reliable automotive specialist.',
-    mutual: 'You',
-    status: 'pending',
-  },
-  {
-    id: 'intro-3',
-    type: 'sent',
-    fromName: 'You',
-    toName: 'Sophie Chen',
-    toId: 'sophie',
-    reason: 'Would love an intro for a portrait session.',
-    mutual: 'Misha',
-    status: 'pending',
-  },
-  {
-    id: 'intro-4',
-    type: 'sent',
-    fromName: 'You',
-    toName: 'Olivia Martin',
-    toId: 'olivia',
-    reason: 'Looking for a trusted realtor in Manhattan.',
-    mutual: 'James',
-    status: 'accepted',
-  },
-  {
-    id: 'intro-5',
-    type: 'sent',
-    fromName: 'You',
-    toName: 'Chris Nguyen',
-    toId: 'chris',
-    reason: 'Curious about private dining experiences.',
-    mutual: 'Michael',
-    status: 'declined',
-  },
-];
+export const INITIAL_INTROS: IntroRequest[] = [];
 
 export const INITIAL_NOTIFICATIONS: AppNotification[] = [
   {

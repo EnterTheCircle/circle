@@ -670,26 +670,29 @@ export function NetworkGlobe({
       {sorted.map((n) => {
         if (!n.visible || n.occlude < 0.1) return null;
         const isEmpty = !!n.emptySlot;
-        const opacity = isEmpty
-          ? (0.5 + n.depthOpacity * 0.35) * n.occlude * (n.dim ? 0.25 : 1)
-          : (n.anonymous ? 0.28 : 0.45) * n.depthOpacity * n.occlude * (n.dim ? 0.22 : 1) +
-            (n.front && !n.anonymous && !n.dim ? 0.28 : 0);
+        const opacity = confidential
+          ? 1
+          : isEmpty
+            ? (0.5 + n.depthOpacity * 0.35) * n.occlude * (n.dim ? 0.25 : 1)
+            : (n.anonymous ? 0.28 : 0.45) * n.depthOpacity * n.occlude * (n.dim ? 0.22 : 1) +
+              (n.front && !n.anonymous && !n.dim ? 0.28 : 0);
         const hot = !isEmpty && highlightId === n.person.id;
         const confidential = !!n.person.confidential;
         const showLabel =
           !isEmpty &&
           (confidential
-            ? n.front && n.occlude > 0.55
+            ? n.occlude > 0.35
             : !n.anonymous && (hot || (n.ring === 1 && n.front && !highlightId && n.occlude > 0.75)));
+        const draw = confidential ? Math.max(n.size, 44) : n.size;
 
         return (
           <View
             key={n.person.id}
             style={{
               position: 'absolute',
-              left: n.x - n.size / 2,
-              top: n.y - n.size / 2,
-              width: n.size,
+              left: n.x - draw / 2,
+              top: n.y - draw / 2,
+              width: confidential ? 120 : n.size,
               zIndex: Math.min(90, Math.max(1, n.zIndex)),
               alignItems: 'center',
               opacity,
@@ -704,17 +707,19 @@ export function NetworkGlobe({
                 styles.node,
                 isEmpty && styles.emptyNode,
                 {
-                  width: n.size,
-                  height: n.size,
-                  borderRadius: n.size / 2,
+                  width: draw,
+                  height: draw,
+                  borderRadius: draw / 2,
                   borderColor: isEmpty
                     ? 'rgba(167,139,250,0.55)'
+                    : confidential
+                      ? 'rgba(226,232,240,0.7)'
                     : hot
                       ? '#22D3EE'
                       : n.onPath && highlightId
                         ? '#A78BFA'
                         : n.person.color,
-                  borderWidth: isEmpty ? 1.5 : hot ? 2.6 : n.ring === 1 ? 2 : 1.2,
+                  borderWidth: isEmpty ? 1.5 : confidential ? 2 : hot ? 2.6 : n.ring === 1 ? 2 : 1.2,
                   // dashed can be flaky on some native builds — keep solid on phone
                   ...(Platform.OS === 'web' && isEmpty ? { borderStyle: 'dashed' as const } : null),
                   backgroundColor: confidential || isGhostToSecond(n.person) ? '#2A2A38' : '#0B1020',
@@ -736,7 +741,7 @@ export function NetworkGlobe({
                   +
                 </Text>
               ) : isGhostToSecond(n.person) || n.person.confidential ? (
-                <Text style={{ color: '#94A3B8', fontSize: Math.max(12, n.size * 0.38), fontWeight: '700' }}>
+                <Text style={{ color: '#F8FAFC', fontSize: Math.max(16, draw * 0.42), fontWeight: '700' }}>
                   ?
                 </Text>
               ) : (
@@ -744,7 +749,7 @@ export function NetworkGlobe({
               )}
             </Pressable>
             {showLabel ? (
-              <Text style={styles.nodeName} numberOfLines={1}>
+              <Text style={[styles.nodeName, confidential && styles.nodeNameConfidential]} numberOfLines={2}>
                 {n.person.confidential
                   ? n.person.profession
                   : isGhostToSecond(n.person)
@@ -839,6 +844,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     textShadowColor: '#000',
     textShadowRadius: 4,
+  },
+  nodeNameConfidential: {
+    color: '#F8FAFC',
+    fontSize: 11,
+    width: 108,
+    lineHeight: 13,
   },
   centerLabel: { position: 'absolute', left: 0, right: 0, alignItems: 'center', zIndex: 220 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },

@@ -15,7 +15,7 @@ import { useApp } from '@/context/AppContext';
 
 export default function IntroductionsWeb() {
   const router = useRouter();
-  const { intros, respondIntro, showToast, profile } = useApp();
+  const { intros, respondIntro, showToast, profile, isAppFounder } = useApp();
   const [tab, setTab] = useState<'received' | 'sent'>('received');
   const list = intros.filter((i) => i.type === tab);
 
@@ -56,6 +56,7 @@ export default function IntroductionsWeb() {
       <Text style={styles.title}>Introductions</Text>
       <Text style={styles.sub}>Approve in MyCircle. Messaging happens in their preferred app.</Text>
 
+      {!isAppFounder ? (
       <View style={styles.founder}>
         <Avatar initials={FOUNDER.initials} photo={FOUNDER.photo} color={FOUNDER.color} size={52} />
         <View style={{ flex: 1 }}>
@@ -66,6 +67,7 @@ export default function IntroductionsWeb() {
           <Text style={[styles.statusText, { color: Colors.success }]}>CONNECTED</Text>
         </View>
       </View>
+      ) : null}
 
       <View style={styles.tabs}>
         {(['received', 'sent'] as const).map((t) => (
