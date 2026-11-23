@@ -17,6 +17,7 @@ import { NETWORK_STATS, Person, getPerson, initialsFromName } from '@/constants/
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useApp } from '@/context/AppContext';
 import CircleWeb from '@/components/web/CirclePage';
+import { useIsNarrowWeb } from '@/lib/useWebLayout';
 
 const TAB_CLEARANCE = 118;
 const FILTERS: { key: DegreeFilter; label: string }[] = [
@@ -27,7 +28,9 @@ const FILTERS: { key: DegreeFilter; label: string }[] = [
 ];
 
 export default function CircleScreen() {
-  if (Platform.OS === 'web') return <CircleWeb />;
+  const narrowWeb = useIsNarrowWeb();
+  // Phone browsers get the mobile layout — desktop web keeps CircleWeb.
+  if (Platform.OS === 'web' && !narrowWeb) return <CircleWeb />;
   return <CircleNative />;
 }
 
@@ -113,6 +116,7 @@ function CircleNative() {
 
       <View style={styles.globeArea}>
         <NetworkGlobe
+          compact
           maxDegree={maxDegree}
           zoom={zoom}
           onZoomChange={handleZoomChange}
@@ -206,7 +210,7 @@ const styles = StyleSheet.create({
   },
   dotText: { color: '#fff', fontSize: 9, fontWeight: '700' },
   reach: { color: '#64748B', fontSize: 12, marginTop: 6, marginBottom: 0 },
-  globeArea: { flex: 1.35, justifyContent: 'center', minHeight: 380, marginTop: 4 },
+  globeArea: { flex: 1, justifyContent: 'center', minHeight: 280, marginTop: 4, overflow: 'hidden' },
   legendBlock: { alignItems: 'center' },
   segment: {
     flexDirection: 'row',

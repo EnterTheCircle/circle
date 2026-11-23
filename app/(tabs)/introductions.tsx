@@ -14,9 +14,11 @@ import {
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useApp } from '@/context/AppContext';
 import IntroductionsWeb from '@/components/web/IntroductionsPage';
+import { useIsNarrowWeb } from '@/lib/useWebLayout';
 
 export default function IntroductionsScreen() {
-  if (Platform.OS === 'web') return <IntroductionsWeb />;
+  const narrowWeb = useIsNarrowWeb();
+  if (Platform.OS === 'web' && !narrowWeb) return <IntroductionsWeb />;
   return <IntroductionsNative />;
 }
 

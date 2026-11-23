@@ -115,10 +115,11 @@ const styles = StyleSheet.create({
     borderRadius: Radii.xl,
     borderWidth: 1,
     borderColor: Colors.borderStrong,
-    backgroundColor: Colors.bgGlass,
+    backgroundColor: '#0B1220',
     overflow: 'hidden',
     paddingVertical: 10,
     paddingHorizontal: 6,
+    zIndex: 20,
   },
   item: {
     flex: 1,

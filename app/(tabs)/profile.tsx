@@ -8,9 +8,11 @@ import { NETWORK_STATS, channelLabel } from '@/constants/mockData';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useApp } from '@/context/AppContext';
 import ProfileWeb from '@/components/web/ProfilePage';
+import { useIsNarrowWeb } from '@/lib/useWebLayout';
 
 export default function ProfileScreen() {
-  if (Platform.OS === 'web') return <ProfileWeb />;
+  const narrowWeb = useIsNarrowWeb();
+  if (Platform.OS === 'web' && !narrowWeb) return <ProfileWeb />;
   return <ProfileNative />;
 }
 

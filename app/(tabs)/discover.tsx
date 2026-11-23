@@ -27,9 +27,11 @@ import {
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useApp } from '@/context/AppContext';
 import DiscoverWeb from '@/components/web/DiscoverPage';
+import { useIsNarrowWeb } from '@/lib/useWebLayout';
 
 export default function DiscoverScreen() {
-  if (Platform.OS === 'web') return <DiscoverWeb />;
+  const narrowWeb = useIsNarrowWeb();
+  if (Platform.OS === 'web' && !narrowWeb) return <DiscoverWeb />;
   return <DiscoverNative />;
 }
 

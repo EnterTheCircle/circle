@@ -83,6 +83,8 @@ type Props = {
   hideChrome?: boolean;
   /** Pixel size of the square globe canvas. */
   size?: number;
+  /** Force phone orbit metrics even on web (narrow phone browsers). */
+  compact?: boolean;
   /** Called when user taps an empty + seat. */
   onInvite?: () => void;
   /** Live signed-in user for the center nucleus (name + photo). */
@@ -186,12 +188,13 @@ function pushEmptySlots(
   }
 }
 
-function buildNodes(focusId: string, size: number): GlobeNode[] {
+function buildNodes(focusId: string, size: number, compact = false): GlobeNode[] {
   const { first, second } = getEgoNetwork(focusId, 3);
   const a = stableSort(first);
   const b = stableSort(second);
   const nodes: GlobeNode[] = [];
-  const isWeb = Platform.OS === 'web';
+  // Desktop web only — phone web passes compact to keep native orbit spacing.
+  const isWeb = Platform.OS === 'web' && !compact;
   const nodeScale = isWeb ? Math.max(0.95, size / 480) : 1;
 
   // Web: wider rings to fill the desktop pane. Phone: original compact orbits.
@@ -297,6 +300,7 @@ export function NetworkGlobe({
   onResetView,
   hideChrome,
   size: sizeProp,
+  compact = false,
   onInvite,
   mePerson,
   showFirst10k,
@@ -319,7 +323,7 @@ export function NetworkGlobe({
     focusId === 'me' && mePerson
       ? mePerson
       : getPerson(focusId) || mePerson || ME;
-  const baseNodes = useMemo(() => buildNodes(focusId, size), [focusId, size]);
+  const baseNodes = useMemo(() => buildNodes(focusId, size, compact), [focusId, size, compact]);
 
   useEffect(() => {
     slowed.current = !!highlightId;
@@ -527,7 +531,10 @@ export function NetworkGlobe({
   const sorted = [...projected].sort((a, b) => b.depth - a.depth);
 
   // Orbit guide ellipses (sampled)
-  const ringScale = Platform.OS === 'web' ? { a: 0.4, b: 0.545, c: 0.68 } : { a: 0.34, b: 0.46, c: 0.56 };
+  const ringScale =
+    Platform.OS === 'web' && !compact
+      ? { a: 0.4, b: 0.545, c: 0.68 }
+      : { a: 0.34, b: 0.46, c: 0.56 };
   const guides = (
     [
       { r: size * ringScale.a, tilt: { x: 0.42, y: 0.18, z: 0.08 }, show: true, color: 'rgba(167,139,250,0.4)' },
