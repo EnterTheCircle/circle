@@ -68,7 +68,7 @@ const STORY_STEPS = [
  */
 export default function CoinHomePage() {
   const { width, height } = useWindowDimensions();
-  const { enterFromLanding, enterDemo, updateProfile, showToast } = useApp();
+  const { enterFromLanding, enterDemo, recognizeFounder, updateProfile, showToast } = useApp();
   const [phase, setPhase] = useState<Phase>('landing');
   const [storyIndex, setStoryIndex] = useState(0);
   const [authMode, setAuthMode] = useState<AuthMode>('signin');
@@ -182,7 +182,8 @@ export default function CoinHomePage() {
   const enterApp = async (
     displayName: string,
     handle: string,
-    contactChannel: AccountState['contactChannel'] = 'email'
+    contactChannel: AccountState['contactChannel'] = 'email',
+    username?: string
   ) => {
     const account: AccountState = {
       phone: contactChannel === 'whatsapp' || contactChannel === 'imessage' ? handle : '',
@@ -193,6 +194,7 @@ export default function CoinHomePage() {
     updateProfile({ name: displayName, photo: defaultAvatar(displayName) });
     await AsyncStorage.removeItem('circle.guide.v2');
     await enterFromLanding(account);
+    if (username?.toLowerCase() === 'founder') recognizeFounder();
     router.replace('/');
     setTimeout(() => {
       try {
@@ -218,7 +220,8 @@ export default function CoinHomePage() {
         await enterApp(
           res.session.name,
           res.session.credential || res.session.email,
-          res.session.channel || 'email'
+          res.session.channel || 'email',
+          res.session.username
         );
         return;
       }
@@ -235,7 +238,12 @@ export default function CoinHomePage() {
           setAuthError(res.error);
           return;
         }
-        await enterApp(res.session.name, res.session.credential || '', res.session.channel || channel);
+        await enterApp(
+          res.session.name,
+          res.session.credential || '',
+          res.session.channel || channel,
+          res.session.username
+        );
         return;
       }
       if (authMode === 'forgot') {

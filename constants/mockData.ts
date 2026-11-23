@@ -438,14 +438,18 @@ export const PEOPLE: Person[] = [
 /** Sample circle shown before someone creates an account. */
 export const DEMO_CIRCLE: Person[] = PEOPLE.filter((p) => p.degree === 1);
 
-let circleMode: 'member' | 'demo' = 'member';
+let circleMode: 'member' | 'demo' | 'founder' = 'member';
 
-export function setCircleMode(mode: 'member' | 'demo') {
+export function setCircleMode(mode: 'member' | 'demo' | 'founder') {
   circleMode = mode;
 }
 
 export function activeCircle(): Person[] {
-  return circleMode === 'demo' ? DEMO_CIRCLE : MY_CIRCLE;
+  if (circleMode === 'demo') return DEMO_CIRCLE;
+  if (circleMode === 'founder') {
+    return FOUNDER_CONTACTS.map((p) => ({ ...p, degree: 1, via: undefined, viaId: undefined }));
+  }
+  return MY_CIRCLE;
 }
 
 export const DISCOVER_IDS = [
@@ -767,8 +771,12 @@ export function degreeLabel(degree: Degree): string {
 /** Undirected adjacency for the prototype graph. */
 export function getNeighbors(personId: string): Person[] {
   if (personId === 'me') {
-    // New members start with the Founder only — other seats are + invites.
+    // Members start with the Founder. The Founder account sees their own contacts.
     return activeCircle().map(enrichPerson);
+  }
+
+  if (circleMode === 'founder' && FOUNDER_CONTACTS.some((p) => p.id === personId)) {
+    return [];
   }
 
   const person = getPerson(personId);

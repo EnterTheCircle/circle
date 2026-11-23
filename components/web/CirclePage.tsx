@@ -37,7 +37,8 @@ function clampZoom(z: number) {
 
 export default function CircleWeb() {
   const router = useRouter();
-  const { unreadCount, isSaved, rememberPerson, requestIntro, profile, startTour, demoMode } = useApp();
+  const { unreadCount, isSaved, rememberPerson, requestIntro, profile, startTour, demoMode, isAppFounder } =
+    useApp();
   const [filter, setFilter] = useState<DegreeFilter>('all');
   const [zoom, setZoom] = useState(WEB_ZOOM_FOR_DEGREE[3]);
   const [focusId, setFocusId] = useState('me');
@@ -86,12 +87,14 @@ export default function CircleWeb() {
 
   const people = useMemo(() => {
     const max = filterToMaxDegree(filter);
-    const first = activeCircle();
-    const through = demoMode ? PEOPLE.filter((p) => p.degree === 2) : FOUNDER_CONTACTS;
+    const first = isAppFounder
+      ? FOUNDER_CONTACTS.map((p) => ({ ...p, degree: 1 as const, via: undefined, viaId: undefined }))
+      : activeCircle();
+    const through = isAppFounder ? [] : demoMode ? PEOPLE.filter((p) => p.degree === 2) : FOUNDER_CONTACTS;
     return [...first, ...through].map(enrichPerson)
       .filter((p) => p.degree <= max)
       .sort((a, b) => a.degree - b.degree || a.name.localeCompare(b.name));
-  }, [filter, demoMode]);
+  }, [filter, demoMode, isAppFounder]);
 
   const focus = focusId === 'me' ? mePerson : getPerson(focusId);
 
@@ -100,12 +103,18 @@ export default function CircleWeb() {
       <View style={styles.topBar}>
         <View style={styles.statsRow}>
           <View style={styles.statChip}>
-            <Text style={styles.statNum}>{demoMode ? activeCircle().length : NETWORK_STATS.direct}</Text>
+            <Text style={styles.statNum}>
+              {isAppFounder ? FOUNDER_CONTACTS.length : demoMode ? activeCircle().length : NETWORK_STATS.direct}
+            </Text>
             <Text style={styles.statLbl}>direct</Text>
           </View>
           <View style={styles.statChip}>
             <Text style={styles.statNum}>
-              {demoMode ? PEOPLE.filter((p) => p.degree >= 2).length : NETWORK_STATS.extended}
+              {isAppFounder
+                ? 0
+                : demoMode
+                  ? PEOPLE.filter((p) => p.degree >= 2).length
+                  : FOUNDER_CONTACTS.length}
             </Text>
             <Text style={styles.statLbl}>in reach</Text>
           </View>
@@ -293,6 +302,7 @@ export default function CircleWeb() {
                 <Text style={styles.sectionLabel}>Your connections</Text>
                 {people.filter((p) => p.degree === 1).map((p) => {
                   const active = focusId === p.id;
+                  const hidden = isConfidential(p);
                   return (
                     <Pressable
                       key={p.id}
@@ -302,13 +312,18 @@ export default function CircleWeb() {
                         setPreview(p);
                       }}
                     >
-                      <Avatar initials={p.initials} photo={p.photo} color={p.color} size={40} />
+                      <Avatar
+                        initials={hidden ? '•' : p.initials}
+                        photo={hidden ? undefined : p.photo}
+                        color={p.color}
+                        size={40}
+                      />
                       <View style={{ flex: 1, minWidth: 0 }}>
                         <Text style={styles.rowName} numberOfLines={1}>
-                          {p.name}
+                          {hidden ? p.profession : p.name}
                         </Text>
                         <Text style={styles.rowMeta} numberOfLines={1}>
-                          {p.profession}
+                          {hidden ? 'Confidential' : p.profession}
                         </Text>
                       </View>
                     </Pressable>

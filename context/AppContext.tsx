@@ -96,6 +96,9 @@ type AppContextValue = {
   /** Public sample circle and tour, before an account exists. */
   demoMode: boolean;
   enterDemo: () => Promise<void>;
+  /** Signed in as the app founder, not a new member named Founder. */
+  isAppFounder: boolean;
+  recognizeFounder: () => void;
   updateAccount: (patch: Partial<AccountState>) => void;
   profile: ProfileState;
   updateProfile: (patch: Partial<ProfileState>) => void;
@@ -180,6 +183,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [tourMode, setTourMode] = useState<'off' | 'welcome' | 'tour'>('off');
   const [tourStep, setTourStepState] = useState(0);
   const [demoMode, setDemoMode] = useState(false);
+  const [isAppFounder, setIsAppFounder] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -211,15 +215,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (!cancelled && !guide && onboarding?.hasSignedUp && !onboarding.demo) setTourMode('welcome');
         const profileRaw = await AsyncStorage.getItem(PROFILE_KEY);
         const session = await getSession();
+        const founderSession = session?.username?.toLowerCase() === 'founder';
+        if (founderSession && !onboarding?.demo) {
+          setIsAppFounder(true);
+          setCircleMode('founder');
+        }
         if (cancelled) return;
         if (profileRaw) {
           const parsed = JSON.parse(profileRaw) as Partial<ProfileState>;
           setProfile((prev) => {
-            const name = parsed.name?.trim() || session?.name?.trim() || prev.name;
+            let name = parsed.name?.trim() || session?.name?.trim() || prev.name;
+            if (founderSession && name.toLowerCase() === 'founder founder') name = 'Founder';
             return {
               ...prev,
               ...parsed,
               name,
+              profession: founderSession ? 'Founder of Circle' : parsed.profession || prev.profession,
               photo: parsed.photo || defaultAvatar(name),
               first10k: parsed.first10k !== false,
             };
@@ -317,6 +328,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [persistOnboarding]
   );
 
+  const recognizeFounder = useCallback(() => {
+    setIsAppFounder(true);
+    setDemoMode(false);
+    setCircleMode('founder');
+    setProfile((p) => {
+      const name = p.name.trim().toLowerCase() === 'founder founder' ? 'Founder' : p.name || 'Founder';
+      const next = { ...p, name, profession: 'Founder of Circle' };
+      void AsyncStorage.setItem(PROFILE_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
   const enterDemo = useCallback(async () => {
     const demoAccount: AccountState = {
       ...DEFAULT_ACCOUNT,
@@ -334,6 +357,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
     setCircleMode('demo');
     setDemoMode(true);
+    setIsAppFounder(false);
     setAccount(demoAccount);
     setProfile(demoProfile);
     setHasSignedUp(true);
@@ -354,6 +378,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setHasSignedUp(false);
     setHasCompletedHowTo(false);
     setDemoMode(false);
+    setIsAppFounder(false);
     setCircleMode('member');
     setTourMode('off');
     setAccount(DEFAULT_ACCOUNT);
@@ -562,6 +587,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       signOut,
       demoMode,
       enterDemo,
+      isAppFounder,
+      recognizeFounder,
       updateAccount,
       profile,
       updateProfile,
@@ -606,6 +633,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       signOut,
       demoMode,
       enterDemo,
+      isAppFounder,
+      recognizeFounder,
       updateAccount,
       profile,
       updateProfile,
