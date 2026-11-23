@@ -40,9 +40,9 @@ function CircleNative() {
   const { width: winW, height: winH } = useWindowDimensions();
   const router = useRouter();
   const { unreadCount, isSaved, rememberPerson, requestIntro, profile } = useApp();
-  const [filter, setFilter] = useState<DegreeFilter>('all');
-  // Slightly more zoomed-out on phone web so rings aren't a pile in the middle.
-  const [zoom, setZoom] = useState(Platform.OS === 'web' ? 0.72 : ZOOM_FOR_DEGREE[3]);
+  // Phone web starts on "Yours" only — All rings is too dense on a 390px screen.
+  const [filter, setFilter] = useState<DegreeFilter>(Platform.OS === 'web' ? 1 : 'all');
+  const [zoom, setZoom] = useState(Platform.OS === 'web' ? ZOOM_FOR_DEGREE[1] : ZOOM_FOR_DEGREE[3]);
   const [focusId, setFocusId] = useState('me');
   const [preview, setPreview] = useState<Person | null>(null);
 
@@ -50,7 +50,7 @@ function CircleNative() {
   const bottomPad = Math.max(insets.bottom, 10) + TAB_CLEARANCE;
   // Fit the orbit to the live viewport (critical on phone web — module defaults can be desktop-sized).
   const globeSize = Math.floor(
-    Math.min(winW - 20, Math.max(280, winH - insets.top - bottomPad - 120), 440)
+    Math.min(winW - 16, Math.max(300, winH - insets.top - bottomPad - 110), 460)
   ) || getDefaultGlobeSize();
 
   const handleZoomChange = useCallback((next: number) => setZoom(next), []);
@@ -74,8 +74,8 @@ function CircleNative() {
 
   const applyFilter = (f: DegreeFilter) => {
     setFilter(f);
-    if (f !== 'all') setZoom(ZOOM_FOR_DEGREE[f]);
-    else setZoom(ZOOM_FOR_DEGREE[3]);
+    if (f !== 'all') setZoom(Platform.OS === 'web' ? Math.min(ZOOM_FOR_DEGREE[f], 1.2) : ZOOM_FOR_DEGREE[f]);
+    else setZoom(Platform.OS === 'web' ? 0.7 : ZOOM_FOR_DEGREE[3]);
   };
 
   return (

@@ -201,17 +201,18 @@ function buildNodes(focusId: string, size: number, compact = false): GlobeNode[]
   const isWeb = Platform.OS === 'web' && !compact;
   const nodeScale = isWeb ? Math.max(0.95, size / 480) : compact ? Math.min(1, size / 360) : 1;
 
-  // Compact (phone): slightly wider rings + fewer seats so faces don't pile up.
-  const r1 = size * (isWeb ? 0.4 : compact ? 0.39 : 0.34);
-  const r2 = size * (isWeb ? 0.545 : compact ? 0.54 : 0.46);
-  const r3 = size * (isWeb ? 0.68 : compact ? 0.68 : 0.56);
+  // Compact (phone): flatter tilt + wider rings so faces don't stack in the middle.
+  const r1 = size * (isWeb ? 0.4 : compact ? 0.42 : 0.34);
+  const r2 = size * (isWeb ? 0.545 : compact ? 0.58 : 0.46);
+  const r3 = size * (isWeb ? 0.68 : compact ? 0.72 : 0.56);
 
-  const tilt1 = { x: 0.42, y: 0.18, z: 0.08 };
-  const tilt2 = { x: -0.55, y: 0.72, z: -0.2 };
-  const tilt3 = { x: 0.25, y: -0.85, z: 0.35 };
+  const tilt1 = compact ? { x: 0.18, y: 0.06, z: 0.03 } : { x: 0.42, y: 0.18, z: 0.08 };
+  const tilt2 = compact ? { x: -0.22, y: 0.28, z: -0.08 } : { x: -0.55, y: 0.72, z: -0.2 };
+  const tilt3 = compact ? { x: 0.12, y: -0.32, z: 0.1 } : { x: 0.25, y: -0.85, z: 0.35 };
 
-  const seats1 = Math.max(isWeb ? 8 : compact ? Math.max(a.length, 1) : Math.max(a.length, 1), a.length);
-  a.forEach((p, i) => {
+  const firstPeople = compact ? a.slice(0, 8) : a;
+  const seats1 = Math.max(isWeb ? 8 : firstPeople.length, firstPeople.length);
+  firstPeople.forEach((p, i) => {
     nodes.push({
       person: p,
       ring: 1,
@@ -219,7 +220,7 @@ function buildNodes(focusId: string, size: number, compact = false): GlobeNode[]
       baseAngle: (i / seats1) * Math.PI * 2 + 0.2,
       orbitSpeed: 0.1 + (hash(p.id) % 5) * 0.006,
       tilt: tilt1,
-      baseSize: (isWeb ? 34 : 34) * nodeScale,
+      baseSize: (compact ? 30 : 34) * nodeScale,
       phase: hash(p.id) * 0.01,
       viaId: undefined,
     });
@@ -227,18 +228,19 @@ function buildNodes(focusId: string, size: number, compact = false): GlobeNode[]
   pushEmptySlots(
     nodes,
     1,
-    seats1 - a.length,
-    a.length,
-    seats1,
+    compact ? Math.min(2, Math.max(0, 6 - firstPeople.length)) : seats1 - firstPeople.length,
+    firstPeople.length,
+    compact ? firstPeople.length + Math.min(2, Math.max(0, 6 - firstPeople.length)) : seats1,
     r1,
     tilt1,
-    (isWeb ? 28 : 26) * nodeScale,
+    (compact ? 22 : isWeb ? 28 : 26) * nodeScale,
     0.08,
     0.2
   );
 
-  const seats2 = Math.max(isWeb ? 12 : compact ? Math.max(b.length, Math.min(b.length + 2, 8)) : Math.max(b.length, 1), b.length);
-  b.forEach((p, i) => {
+  const secondPeople = compact ? b.slice(0, 6) : b;
+  const seats2 = Math.max(isWeb ? 12 : secondPeople.length, secondPeople.length);
+  secondPeople.forEach((p, i) => {
     nodes.push({
       person: p,
       ring: 2,
@@ -246,7 +248,7 @@ function buildNodes(focusId: string, size: number, compact = false): GlobeNode[]
       baseAngle: (i / seats2) * Math.PI * 2 + 0.55,
       orbitSpeed: -0.07 - (hash(p.id) % 4) * 0.005,
       tilt: tilt2,
-      baseSize: (isWeb ? 22 : 22) * nodeScale,
+      baseSize: (compact ? 18 : 22) * nodeScale,
       phase: hash(p.id) * 0.01,
       viaId: p.viaId,
     });
@@ -254,8 +256,8 @@ function buildNodes(focusId: string, size: number, compact = false): GlobeNode[]
   pushEmptySlots(
     nodes,
     2,
-    seats2 - b.length,
-    b.length,
+    compact ? 0 : seats2 - secondPeople.length,
+    secondPeople.length,
     seats2,
     r2,
     tilt2,
@@ -265,7 +267,7 @@ function buildNodes(focusId: string, size: number, compact = false): GlobeNode[]
   );
 
   // Outer ring: + invite seats — fewer on phone so the orbit breathes
-  const seats3 = isWeb ? 10 : compact ? 4 : 8;
+  const seats3 = isWeb ? 10 : compact ? 3 : 8;
   for (let i = 0; i < seats3; i++) {
     nodes.push({
       person: emptyPerson(`empty-3-${i}`, 3),
@@ -539,7 +541,7 @@ export function NetworkGlobe({
     Platform.OS === 'web' && !compact
       ? { a: 0.4, b: 0.545, c: 0.68 }
       : compact
-        ? { a: 0.39, b: 0.54, c: 0.68 }
+        ? { a: 0.42, b: 0.58, c: 0.72 }
         : { a: 0.34, b: 0.46, c: 0.56 };
   const guides = (
     [
@@ -700,9 +702,9 @@ export function NetworkGlobe({
                 (!compact && n.ring === 1 && n.front && !highlightId && n.occlude > 0.75) ||
                 (compact && hot)));
         const draw = confidential
-          ? Math.max(n.size, compact ? 36 : 44)
+          ? Math.max(n.size, compact ? 32 : 44)
           : compact
-            ? Math.min(n.size, n.ring === 1 ? 34 : 26)
+            ? Math.min(n.size, n.ring === 1 ? 32 : 22)
             : n.size;
 
         return (
@@ -712,7 +714,7 @@ export function NetworkGlobe({
               position: 'absolute',
               left: n.x - draw / 2,
               top: n.y - draw / 2,
-              width: confidential ? 120 : n.size,
+              width: draw,
               zIndex: Math.min(90, Math.max(1, n.zIndex)),
               alignItems: 'center',
               opacity,
