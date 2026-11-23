@@ -1,10 +1,17 @@
 import React from 'react';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { MarketCard, MarketingShell } from '@/components/web/MarketingShell';
+import { CIRCLE_MARK } from '@/lib/brand';
 
 export default function CircleTokenPage() {
   return (
     <MarketingShell kicker="Culture layer" title="$CIRCLE">
+      <View style={styles.heroMark}>
+        <Image source={CIRCLE_MARK} style={styles.mark} />
+        <Text style={styles.tokenName}>$CIRCLE</Text>
+        <Text style={styles.tokenSub}>Same mark as the product. One Circle.</Text>
+      </View>
+
       <Text style={styles.lede}>
         The product is Circle — warm intros, orbit, ghost mode. $CIRCLE is how that culture travels
         on-chain and on CT. Business connection: attention → product → community, not the other way
@@ -48,6 +55,21 @@ export default function CircleTokenPage() {
 }
 
 const styles = StyleSheet.create({
+  heroMark: { alignItems: 'center', marginBottom: 28, gap: 10 },
+  mark: {
+    width: 112,
+    height: 112,
+    borderRadius: 56,
+    borderWidth: 1,
+    borderColor: 'rgba(34,211,238,0.35)',
+  },
+  tokenName: {
+    color: '#67E8F9',
+    fontSize: 28,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+  },
+  tokenSub: { color: '#64748B', fontSize: 13 },
   lede: {
     color: '#CBD5E1',
     fontSize: 17,

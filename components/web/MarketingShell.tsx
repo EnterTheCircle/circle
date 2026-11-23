@@ -2,8 +2,7 @@ import React from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Radii } from '@/constants/theme';
-
-const AVATAR = require('../../assets/images/coin/avatar.jpg');
+import { CIRCLE_MARK } from '@/lib/brand';
 
 const LINKS: { href: string; label: string }[] = [
   { href: '/about', label: 'About' },
@@ -26,7 +25,7 @@ export function MarketingShell({
     <View style={styles.page}>
       <View style={styles.top}>
         <Pressable style={styles.brand} onPress={() => router.push('/signup')}>
-          <Image source={AVATAR} style={styles.mark} />
+          <Image source={CIRCLE_MARK} style={styles.mark} />
           <Text style={styles.word}>CIRCLE</Text>
         </Pressable>
         <View style={styles.nav}>

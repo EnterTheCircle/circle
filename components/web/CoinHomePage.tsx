@@ -25,7 +25,8 @@ import {
 } from '@/lib/circleAuth';
 import { defaultAvatar } from '@/constants/mockData';
 
-const AVATAR = require('../../assets/images/coin/avatar.jpg');
+import { CIRCLE_MARK } from '@/lib/brand';
+const AVATAR = CIRCLE_MARK;
 /** Native driver is flaky for multi-prop web animations — callbacks never fire. */
 const NATIVE = Platform.OS !== 'web';
 
